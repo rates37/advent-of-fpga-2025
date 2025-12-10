@@ -41,3 +41,10 @@ test/
 
 **.vcd
 **.bkp
+# Don't accidentally include puzzle inputs 
+#  (use git add -f for example inputs that are not REAL puzzle inputs)
+#  as per AoC rules
+**.txt
+
+# Ignore iverilog output files:
+**.out
