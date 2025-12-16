@@ -3,7 +3,7 @@ VVP := vvp
 
 SRCS := day01_tb.v \
 		day01_core.v \
-		rom.v \
+		../utils/rom.v \
 		solver.v \
 		decoder_fsm.v 
 
