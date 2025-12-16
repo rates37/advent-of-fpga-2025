@@ -48,3 +48,5 @@ test/
 
 # Ignore iverilog output files:
 **.out
+
+**.DS_STORE
