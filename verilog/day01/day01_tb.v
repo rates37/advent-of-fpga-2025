@@ -30,6 +30,18 @@ module day01_tb;
         forever #(CLK_PERIOD/2) clk = !clk;
     end
 
+    integer clock_cycle_count;
+    initial begin
+        clock_cycle_count = 0;
+    end
+    always @(clk) begin
+        if (rst) begin
+            clock_cycle_count = 0;
+        end else if (clk && !done) begin
+            clock_cycle_count = clock_cycle_count + 1;
+        end
+    end
+
     // instantiate rom with input file:
     rom #(
         .N_ADDR_BITS(16),
@@ -77,6 +89,7 @@ module day01_tb;
         $display("Day 1 Complete");
         $display("Part 1 Result: %0d", part1_result);
         $display("Part 2 Result: %0d", part2_result);
+        $display("Took %0d clock cycles", clock_cycle_count);
         $finish;
     end
 
