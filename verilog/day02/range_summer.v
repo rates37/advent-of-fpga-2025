@@ -19,7 +19,7 @@ module range_summer (
     // outputs:
     output reg [63:0] sum_out,
     output reg [63:0] part1_sum_out,
-    output reg done,
+    output reg done
 
 );
 
