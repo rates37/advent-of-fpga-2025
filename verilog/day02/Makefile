@@ -7,7 +7,7 @@ SRCS := day02_tb.v \
 		period_summer.v \
 		range_summer.v 
 
-OUT := day03_tb.out
+OUT := day02_tb.out
 
 # parameters:
 INPUT_FILE ?= input.txt
