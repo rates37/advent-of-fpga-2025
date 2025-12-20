@@ -43,9 +43,10 @@ module day05_core #(
     // searching for values:
     localparam S_SEARCH_INIT = 12;
     localparam S_SEARCH_LOOP = 13;
-    localparam S_SEARCH_NEXT = 14; // return to parse value state after this
+    localparam S_SEARCH_EVAL = 14;
+    localparam S_SEARCH_NEXT = 15; // return to parse value state after this
 
-    localparam S_DONE = 15;
+    localparam S_DONE = 16;
     reg [4:0] state;
 
     // !!! RAM:
@@ -111,6 +112,8 @@ module day05_core #(
             is_eof <= 0;
             current_num <= 0;
             has_parsed_digit <= 0;
+            r_ram_addr <= 0;
+            m_ram_addr <= 0;
         end else begin
             case (state)
                 S_IDLE: begin
@@ -201,11 +204,9 @@ module day05_core #(
                 end
 
                 S_SORT_COMPARE: begin
-                    val_A = r_ram_rdata;
-                    r_ram_addr = sort_j + 1;
-                    val_B = r_ram_rdata; // this is icky, likely won't synthesise well, should probably add a buffer clock cycle to store valA and val_B separately
 
-                    if (val_A[127:64] > val_B[127:64]) begin
+                    if (range_ram[sort_j][127:64] > range_ram[sort_j+1][127:64]) begin
+                        val_A = range_ram[sort_j];
                         val_B = range_ram[sort_j + 1];
                         state <= S_SORT_SWAP;
                     end else begin
@@ -236,14 +237,11 @@ module day05_core #(
                         curr_start <= range_ram[0][127:64];
                         curr_end <= range_ram[0][63:0];
                         merge_idx <= 1;
-                        state <= S_MERGE_CHECK;
                     end else if (merge_idx < num_ranges) begin
-                        next_start = range_ram[merge_idx][127:64];
-                        next_end = range_ram[merge_idx][63:0];
-                        if (next_start <= curr_end + 1) begin
-                            if (next_end > curr_end) begin
-                                curr_end <= next_end;
-                            end 
+                        if (range_ram[merge_idx][127:64] <= curr_end + 1) begin
+                            if (range_ram[merge_idx][63:0] > curr_end) begin
+                                curr_end <= range_ram[merge_idx][63:0];
+                            end
                             merge_idx <= merge_idx + 1;
                         end else begin
                             state <= S_MERGE_SAVE;
@@ -257,8 +255,8 @@ module day05_core #(
                     merged_ram[num_merged] <= {curr_start, curr_end};
                     num_merged <= num_merged + 1;
                     part2_result <= part2_result + (curr_end - curr_start + 1);
-                    curr_start <= next_start;
-                    curr_end <= next_end;
+                    curr_start <= range_ram[merge_idx][127:64]; 
+                    curr_end <= range_ram[merge_idx][63:0];
                     merge_idx <= merge_idx + 1;
                     state <= S_MERGE_CHECK;
                 end
@@ -320,25 +318,28 @@ module day05_core #(
                     if (low > high) begin
                         state <= S_SEARCH_NEXT;
                     end else begin
-                        mid = low + (high-low) / 2;
-                        m_ram_addr = mid;
-                        if (search_val >= m_ram_rdata[127:64] && search_val <= m_ram_rdata[63:0]) begin
-                            // found enclosing interval:
-                            part1_result <= part1_result + 1;
-                            state <= S_SEARCH_NEXT;
-                        end else if (search_val < m_ram_rdata[127:64]) begin
-                            if (mid == 0) begin
-                                state <= S_SEARCH_NEXT;
-                            end else begin
-                                high <= mid-1;
-                                state <= S_SEARCH_LOOP;
-                            end
-                        end else begin
-                            low <= mid + 1;
-                            state <= S_SEARCH_LOOP;
-                        end
+                        m_ram_addr <= low + (high-low) / 2;
+                        state <= S_SEARCH_EVAL;
                     end
 
+                end
+
+                S_SEARCH_EVAL: begin
+                    mid <= m_ram_addr;
+                    if (search_val >= m_ram_rdata[127:64] && search_val <= m_ram_rdata[63:0]) begin
+                        part1_result <= part1_result + 1;
+                        state <= S_SEARCH_NEXT;
+                    end else if (search_val < m_ram_rdata[127:64]) begin
+                        if (m_ram_addr == 0) begin
+                            state <= S_SEARCH_NEXT;
+                        end else begin
+                            high <= m_ram_addr - 1;
+                            state <= S_SEARCH_LOOP;
+                        end
+                    end else begin
+                            low <= m_ram_addr + 1;
+                            state <= S_SEARCH_LOOP;
+                    end
                 end
 
                 S_SEARCH_NEXT: begin
