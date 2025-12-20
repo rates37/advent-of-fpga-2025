@@ -27,32 +27,25 @@ module day05_core #(
 
     // sorting ranges: // todo: convert range RAM to a shift register that can shift ranges in order to implement optimised insertion sort for online range parsing (rather than parse -> sort as separate stages)
     localparam S_SORT_PREP = 3;
-    localparam S_SORT_OUTER = 4;
-    localparam S_SORT_INNER = 5;
-    localparam S_SORT_READ_A = 6;
-    localparam S_SORT_READ_B = 7;
-    localparam S_SORT_COMPARE = 8;
-    localparam S_SORT_SWAP_1 = 9;
-    localparam S_SORT_SWAP_2 = 10;
+    localparam S_SORT_INNER = 4;
+    localparam S_SORT_COMPARE = 5;
+    localparam S_SORT_SWAP = 6;
 
     // merging ranges:
-    localparam S_MERGE_INIT = 11;
-    localparam S_MERGE_READ = 12;
-    localparam S_MERGE_CHECK = 13;
-    localparam S_MERGE_SAVE = 14;
-    localparam S_MERGE_FINALISE = 15;
+    localparam S_MERGE_INIT = 7;
+    localparam S_MERGE_CHECK = 8;
+    localparam S_MERGE_SAVE = 9;
+    localparam S_MERGE_FINALISE = 10;
 
     // parse values:
-    localparam S_PARSE_VALUE = 16;
+    localparam S_PARSE_VALUE = 11;
 
     // searching for values:
-    localparam S_SEARCH_INIT = 17;
-    localparam S_SEARCH_CHECK = 18;
-    localparam S_SEARCH_READ = 19;
-    localparam S_SEARCH_EVAL = 20;
-    localparam S_SEARCH_NEXT = 21; // return to parse value state after this
+    localparam S_SEARCH_INIT = 12;
+    localparam S_SEARCH_LOOP = 13;
+    localparam S_SEARCH_NEXT = 14; // return to parse value state after this
 
-    localparam S_DONE = 22;
+    localparam S_DONE = 15;
     reg [4:0] state;
 
     // !!! RAM:
@@ -62,30 +55,13 @@ module day05_core #(
     
     // range ram controls:
     reg [LOG2_MAX_RANGES-1:0] r_ram_addr;
-    reg r_ram_we;
-    reg [127:0] r_ram_wdata;
-    reg [127:0] r_ram_rdata;
+    wire [127:0] r_ram_rdata;
+    assign r_ram_rdata = range_ram[r_ram_addr];
 
     // merged ram controls:
     reg [LOG2_MAX_RANGES-1:0] m_ram_addr;
-    reg m_ram_we;
-    reg [127:0] m_ram_wdata;
-    reg [127:0] m_ram_rdata;
-
-    // ram logic:
-    always @(posedge clk) begin
-        if (r_ram_we) begin
-            range_ram[r_ram_addr] <= r_ram_wdata;
-        end
-        r_ram_rdata <= range_ram[r_ram_addr];
-    end
-
-    always @(posedge clk) begin
-        if (m_ram_we) begin
-            merged_ram[m_ram_addr] <= m_ram_wdata;
-        end
-        m_ram_rdata <= merged_ram[m_ram_addr];
-    end
+    wire [127:0] m_ram_rdata;
+    assign m_ram_rdata = merged_ram[m_ram_addr];
 
     // variables/intermediate registers
     reg [63:0] current_num;
@@ -94,8 +70,6 @@ module day05_core #(
 
     // parsing variables:
     reg [7:0] char_in;
-    reg char_valid;
-
     reg is_parsing_ranges; // 1 = parsing ranges, 0 = values (for part1 lookup)
     reg is_eof;
     reg has_parsed_digit;
@@ -135,15 +109,9 @@ module day05_core #(
             num_merged <= 0;
             is_parsing_ranges <= 1;
             is_eof <= 0;
-            r_ram_we <= 0;
-            m_ram_we <= 0;
             current_num <= 0;
             has_parsed_digit <= 0;
         end else begin
-            // default prevent writing to ram:
-            r_ram_we <= 0;
-            m_ram_we <= 0;
-
             case (state)
                 S_IDLE: begin
                     state <= S_PARSE_RANGE;
@@ -184,7 +152,8 @@ module day05_core #(
                                 rom_addr <= rom_addr + 1;
                         end
                     end else begin
-                        // reached EOF
+                        // reached EOF - shouldn't happen
+                        // $display("Input file probably malformed!")
                         state <= S_DONE;
                     end
                 end
@@ -192,9 +161,7 @@ module day05_core #(
 
                 S_STORE_RANGE: begin
                     // write the range to RAM:
-                    r_ram_addr <= num_ranges;
-                    r_ram_wdata <= {range_L, range_R};
-                    r_ram_we <= 1;
+                    range_ram[num_ranges] <= {range_L, range_R};
                     num_ranges <= num_ranges + 1;
 
                     // reset parsing variables:
@@ -214,137 +181,91 @@ module day05_core #(
                         state <= S_MERGE_INIT;
                     end else begin
                         sort_i <= 0;
-                        state <= S_SORT_OUTER;
+                        sort_j <= 0;
+                        state <= S_SORT_INNER;
                         // $display("Starting sort: %d ranges", num_ranges);
                     end
                 end
 
-                S_SORT_OUTER: begin
+                S_SORT_INNER: begin
                     if (sort_i >= num_ranges - 1) begin
                         state <= S_MERGE_INIT;
-                    end else begin
+                    end else if (sort_j >= num_ranges - 1 - sort_i) begin
+                        sort_i <= sort_i + 1;
                         sort_j <= 0;
                         state <= S_SORT_INNER;
-                    end
-                end
-
-                S_SORT_INNER: begin
-                    if (sort_j >= num_ranges - 1 - sort_i) begin
-                        sort_i <= sort_i + 1;
-                        state <= S_SORT_OUTER;
                     end else begin
                         r_ram_addr <= sort_j;
-                        state <= S_SORT_READ_A;
+                        state <= S_SORT_COMPARE;
                     end
-                end
-
-                S_SORT_READ_A: begin
-                    // r_ram_adr was set to sort_j in S_SORT_INNER
-                    r_ram_addr <= sort_j + 1;
-                    state <= S_SORT_READ_B;
-                end
-
-                S_SORT_READ_B: begin
-                    val_A <= r_ram_rdata;
-                    // r_ram_rdata is sort_j + 1 (set in S_SORT_READ_A)
-                    state <= S_SORT_COMPARE;
                 end
 
                 S_SORT_COMPARE: begin
-                    val_B <= r_ram_rdata;
-                    state <= S_SORT_SWAP_1;
-                end
+                    val_A = r_ram_rdata;
+                    r_ram_addr = sort_j + 1;
+                    val_B = r_ram_rdata; // this is icky, likely won't synthesise well, should probably add a buffer clock cycle to store valA and val_B separately
 
-                S_SORT_SWAP_1: begin
                     if (val_A[127:64] > val_B[127:64]) begin
-                        // need to swap since out of order:
-                        // $display("Swapping indices %d and %d because: %d > %d", sort_j, sort_j+1, val_A[127:64], val_B[127:64]);
-                        r_ram_addr <= sort_j;
-                        r_ram_wdata <= val_B;
-                        r_ram_we <= 1;
-                        state <= S_SORT_SWAP_2; // need to write val A into the old position of valB to complete the swap
+                        val_B = range_ram[sort_j + 1];
+                        state <= S_SORT_SWAP;
                     end else begin
-                        // already in order -> move to next pair
-                        sort_j <= sort_j + 1; // todo: can make this more efficient since range[sort_j+1] is already loaded -> can save a clock cycle on each inner loop?
-                                              // currently leaving as a todo because more important to get mvp working and already implementing a lot of optimisations
+                        sort_j <= sort_j + 1;
                         state <= S_SORT_INNER;
                     end
                 end
 
-                S_SORT_SWAP_2: begin
-                    r_ram_addr <= sort_j + 1;
-                    r_ram_wdata <= val_A;
-                    r_ram_we <= 1;
+                S_SORT_SWAP: begin
+                    range_ram[sort_j] <= val_B;
+                    range_ram[sort_j + 1] <= val_A;
                     sort_j <= sort_j + 1;
                     state <= S_SORT_INNER;
                 end
-
 
                 //! ----------------------
                 //! Merging Ranges Stages:
                 //! ----------------------
                 S_MERGE_INIT: begin
-                    // if (num_ranges == 0) begin
-                    //     $display("Something has gone very wrong: no ranges parsed");
-                    // end
                     merge_idx <= 0;
-                    r_ram_addr <= 0;
                     num_merged <= 0;
-                    state <= S_MERGE_READ;
-                end
-
-                S_MERGE_READ: begin
+                    part2_result <= 0;
                     state <= S_MERGE_CHECK;
                 end
 
                 S_MERGE_CHECK: begin
                     if (merge_idx == 0) begin
-                        curr_start <= r_ram_rdata[127:64];
-                        curr_end <= r_ram_rdata[63:0];
+                        curr_start <= range_ram[0][127:64];
+                        curr_end <= range_ram[0][63:0];
                         merge_idx <= 1;
-                        r_ram_addr <= 1;
-                        state <= S_MERGE_READ;
-                    end else if (merge_idx <= num_ranges) begin
-                        if (merge_idx == num_ranges) begin
-                            state <= S_MERGE_FINALISE;
+                        state <= S_MERGE_CHECK;
+                    end else if (merge_idx < num_ranges) begin
+                        next_start = range_ram[merge_idx][127:64];
+                        next_end = range_ram[merge_idx][63:0];
+                        if (next_start <= curr_end + 1) begin
+                            if (next_end > curr_end) begin
+                                curr_end <= next_end;
+                            end 
+                            merge_idx <= merge_idx + 1;
                         end else begin
-                            next_start = r_ram_rdata[127:64];
-                            next_end = r_ram_rdata[63:0];
-
-                            if (next_start <= curr_end+1) begin
-                                if (next_end > curr_end) begin
-                                    curr_end <= next_end;
-                                end
-                                // keep reading ranges to merge as many sequential ranges as possible 
-                                merge_idx <= merge_idx + 1;
-                                r_ram_addr <= merge_idx + 1;
-                                state <= S_MERGE_READ;
-                            end else begin
-                                // once we reach a discontinuity, save the currently accumulated range into the merged range RAM
-                                state <= S_MERGE_SAVE;
-                            end
+                            state <= S_MERGE_SAVE;
                         end
+                    end else begin
+                        state <= S_MERGE_FINALISE;
                     end
                 end
 
                 S_MERGE_SAVE: begin
-                    m_ram_addr <= num_merged;
-                    m_ram_wdata <= {curr_start, curr_end};
-                    m_ram_we <= 1;
+                    merged_ram[num_merged] <= {curr_start, curr_end};
                     num_merged <= num_merged + 1;
-                    part2_result <= part2_result + (curr_end - curr_start + 1); // calculate p2 result as merging ranges 
+                    part2_result <= part2_result + (curr_end - curr_start + 1);
                     curr_start <= next_start;
                     curr_end <= next_end;
                     merge_idx <= merge_idx + 1;
-                    r_ram_addr <= merge_idx + 1;
-                    state <= S_MERGE_READ;
+                    state <= S_MERGE_CHECK;
                 end
 
                 S_MERGE_FINALISE: begin
                     // save the final range:
-                    m_ram_addr <= num_merged;
-                    m_ram_wdata <= {curr_start, curr_end};
-                    m_ram_we <= 1;
+                    merged_ram[num_merged] <= {curr_start, curr_end};
                     num_merged <= num_merged + 1;
                     part2_result <= part2_result + (curr_end - curr_start + 1);
 
@@ -392,42 +313,32 @@ module day05_core #(
                     // $display("Searching for %d", search_val);
                     low <= 0;
                     high <= num_merged - 1;
-                    state <= S_SEARCH_CHECK;
+                    state <= S_SEARCH_LOOP;
                 end
 
-                S_SEARCH_CHECK: begin
+                S_SEARCH_LOOP: begin
                     if (low > high) begin
-                        // failed to find an interval that contains search_val
                         state <= S_SEARCH_NEXT;
                     end else begin
-                        mid <= low + (high - low) / 2;
-                        m_ram_addr <= low + (high - low) / 2;
-                        state <= S_SEARCH_READ;
-                    end
-                end
-
-                S_SEARCH_READ: begin
-                    // state to wait for data from RAM to be read
-                    state <= S_SEARCH_EVAL;
-
-                end
-
-                S_SEARCH_EVAL: begin
-                    if (search_val >= m_ram_rdata[127:64] && search_val <= m_ram_rdata[63:0]) begin
-                        // found an enclosing interval
-                        part1_result <= part1_result  + 1;
-                        state <= S_SEARCH_NEXT;
-                    end else if (search_val < m_ram_rdata[127:64]) begin 
-                        if (mid == 0) begin
+                        mid = low + (high-low) / 2;
+                        m_ram_addr = mid;
+                        if (search_val >= m_ram_rdata[127:64] && search_val <= m_ram_rdata[63:0]) begin
+                            // found enclosing interval:
+                            part1_result <= part1_result + 1;
                             state <= S_SEARCH_NEXT;
+                        end else if (search_val < m_ram_rdata[127:64]) begin
+                            if (mid == 0) begin
+                                state <= S_SEARCH_NEXT;
+                            end else begin
+                                high <= mid-1;
+                                state <= S_SEARCH_LOOP;
+                            end
                         end else begin
-                            high <= mid-1;
-                            state <= S_SEARCH_CHECK;
-                        end
-                    end else begin
                             low <= mid + 1;
-                            state <= S_SEARCH_CHECK;
+                            state <= S_SEARCH_LOOP;
+                        end
                     end
+
                 end
 
                 S_SEARCH_NEXT: begin
