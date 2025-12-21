@@ -18,7 +18,7 @@ module day05_opt_core #(
     output reg done
 );
 
-    // FSM States and State logic (good god this is a big FSM):
+    // FSM States and State logic
     localparam S_IDLE = 0;
 
     // parsing and merge/sorting:
@@ -66,22 +66,51 @@ module day05_opt_core #(
     reg [LOG2_MAX_RANGES-1:0] num_merged;
 
     // insertion logic signals:
-    reg [LOG2_MAX_RANGES-1:0] target_idx;
-    reg found_idx;
-    integer k;
-
-    always @(*) begin
-        target_idx = num_ranges;
-        found_idx = 0;
-        for (k=0; k<MAX_RANGES; k=k+1) begin // todo: this is a very long chain of combinational logic -> binary search instead?
-            if (!found_idx && k<num_ranges) begin
-                if (range_ram[k][127:64] > range_L) begin
-                    target_idx = k;
-                    found_idx = 1;
-                end
-            end
+    wire [MAX_RANGES-1:0] cmp_mask; // cmp_mask[i] is 1 if current range's lower bound is 
+                                    //  less than the range at position i in the range_ram 
+                                    //  (i.e., it will need to be shifted in order to insert 
+                                    //  the newly parsed range)
+    genvar i;
+    generate
+        for (i=0; i<MAX_RANGES; i=i+1) begin : gen_cmp
+            assign cmp_mask[i] = (i < num_ranges) && (range_ram[i][127:64] > range_L);
         end
-    end
+    endgenerate
+
+    // 16:4 priority encoder
+    function [4:0] prio16(input [15:0] mask);
+        begin
+            if (mask[0]) prio16 = 5'd0;
+            else if (mask[1]) prio16 = 5'd1;
+            else if (mask[2]) prio16 = 5'd2;
+            else if (mask[3]) prio16 = 5'd3;
+            else if (mask[4]) prio16 = 5'd4;
+            else if (mask[5]) prio16 = 5'd5;
+            else if (mask[6]) prio16 = 5'd6;
+            else if (mask[7]) prio16 = 5'd7;
+            else if (mask[8]) prio16 = 5'd8;
+            else if (mask[9]) prio16 = 5'd9;
+            else if (mask[10]) prio16 = 5'd10;
+            else if (mask[11]) prio16 = 5'd11;
+            else if (mask[12]) prio16 = 5'd12;
+            else if (mask[13]) prio16 = 5'd13;
+            else if (mask[14]) prio16 = 5'd14;
+            else if (mask[15]) prio16 = 5'd15;
+            else prio16 = 5'd16; // code for not found
+        end
+    endfunction
+
+    wire [4:0] block_prio [15:0];
+    wire [15:0] block_valid;
+    generate
+        for (i=0; i<16; i=i+1) begin : gen_prio
+            assign block_prio[i] = prio16(cmp_mask[i*16 +: 16]);
+            assign block_valid[i] = (block_prio[i] != 5'd16);
+        end
+    endgenerate
+
+    wire [4:0] master_prio = prio16(block_valid);
+    wire [LOG2_MAX_RANGES-1:0] target_idx = (master_prio == 5'd16) ? num_ranges : {master_prio[3:0], block_prio[master_prio[3:0]][3:0]};
 
     // merging variables:
     reg [LOG2_MAX_RANGES-1:0] merge_idx;
@@ -93,6 +122,8 @@ module day05_opt_core #(
     reg [LOG2_MAX_RANGES-1:0] low;
     reg [LOG2_MAX_RANGES-1:0] mid;
     reg [LOG2_MAX_RANGES-1:0] high; // uses binary search to optimise lookups
+
+    integer k;
 
     // logic implementation:
     // this gonna take a long time
@@ -152,7 +183,7 @@ module day05_opt_core #(
                         end
                     end else begin
                         // reached EOF - shouldn't happen
-                        // $display("Input file probably malformed!")
+                        $display("Input file probably malformed!");
                         state <= S_DONE;
                     end
                 end
