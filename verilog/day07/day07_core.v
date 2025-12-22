@@ -49,6 +49,8 @@ module day07_core #(
         ((col < row_width && row_buf[col] == ".") ? t_cur : 0) +
         ((col > 0 && row_buf[col-1] == "^") ? t_prev : 0) +
         ((col < row_width-1 && row_buf[col+1] == "^") ? t_next : 0);
+    
+    integer i;
     always @(posedge clk) begin
         if (rst) begin
             state <= S_INIT;
@@ -64,15 +66,15 @@ module day07_core #(
         end else begin
             case (state)
                 S_INIT: begin
-                    ram_0[col] <= 0; // move to a parallel forloop
-                    ram_1[col] <= 0;
-                    if (col == MAX_WIDTH-1) begin
-                        col <= 0;
-                        state <= S_FIND_S;
-                        rom_addr <= 0;
-                    end else begin
-                        col <= col + 1;
+                    // clear all register buffers:
+                    for (i=0; i<MAX_WIDTH; i=i+1) begin
+                        ram_0[i] <= 0;
+                        ram_1[i] <= 0;
+                        row_buf[i] <= 0;
                     end
+                    col <= 0;
+                    state <= S_FIND_S;
+                    rom_addr <= 0;
                 end
 
 
@@ -134,18 +136,15 @@ module day07_core #(
 
 
                 S_CLEAR_NEXT: begin
-                    if (current_ram_sel) begin
-                        ram_0[col] <= 0;
-                    end else begin
-                        ram_1[col] <= 0;
+                    for (i=0; i<MAX_WIDTH; i=i+1) begin
+                        if (current_ram_sel == 0) begin
+                            ram_1[i] <= 0;
+                        end else begin
+                            ram_0[i] <= 0;
+                        end
                     end
-
-                    if (col == MAX_WIDTH-1) begin
-                        col <= 0;
-                        state <= S_PROCESS;
-                    end else begin
-                        col <= col + 1;
-                    end
+                    col <= 0;
+                    state <= S_PROCESS;
                 end
 
 
@@ -161,7 +160,7 @@ module day07_core #(
                         part1_result <= part1_result + 1;
                     end
 
-                    if (col == MAX_WIDTH-1) begin
+                    if (col == MAX_WIDTH-1 || col >= row_width) begin
                         current_ram_sel <= !current_ram_sel;
                         col <= 0;
                         if (last_row_flag) begin
@@ -176,7 +175,7 @@ module day07_core #(
 
 
                 S_SUM_RESULT: begin
-                    if (col == MAX_WIDTH) begin
+                    if (col == MAX_WIDTH || col >= row_width+1) begin
                         state <= S_DONE;
                     end else begin
                         part2_result <= part2_result + (current_ram_sel == 0 ? ram_0[col] : ram_1[col]);
