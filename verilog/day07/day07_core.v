@@ -19,14 +19,14 @@ module day07_core #(
 );
 
     // FSM states:
-    localparam S_INIT = 0;
-    localparam S_FIND_S = 1;
-    localparam S_START_ROW = 2;
-    localparam S_READY_ROW = 3;
-    localparam S_READ_ROW = 4;
-    localparam S_CLEAR_NEXT = 5;
-    localparam S_PROCESS = 6;
-    localparam S_SUM_RESULT = 7;
+    localparam S_INIT = 0; // clear buffers
+    localparam S_FIND_S = 1; // scan first row to find initial tachyon location
+    localparam S_START_ROW = 2; // prepare to read a new row
+    localparam S_READY_ROW = 3; // waits for rom to be ready
+    localparam S_READ_ROW = 4; // reads characters into row_buf until end of row / EOF
+    localparam S_CLEAR_NEXT = 5; // clears next buffers
+    localparam S_PROCESS = 6; // computes number of tachyons in each horizontal position in next row based on current row and current positions
+    localparam S_SUM_RESULT = 7; // accumulate Part 2 results
     localparam S_DONE = 8;
 
     reg [3:0] state;
