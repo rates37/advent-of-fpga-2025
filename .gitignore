@@ -259,3 +259,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+
+# ignore csv and pngs (benchmark outputs)
+# I will add -f the key files at a later time
+**/benchmarks/*.csv
+**/benchmarks/*.png
