@@ -1,10 +1,10 @@
 import os
 import subprocess
 import tempfile
-import shutil
+import statistics
 import re
 from pathlib import Path
-
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from generate_input import gen_day01
@@ -77,9 +77,43 @@ def benchmark_day01(lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5,
     finally:
         os.chdir(original_cwd)
 
+    # save results to file:
+    out_dir = root / "benchmarks"
+    out_dir.mkdir(exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_path = out_dir / f"day01_benchmark_{timestamp}.csv"
+
+    with open(csv_path, "w", encoding="utf-8") as f:
+        # header row:
+        f.write("input_size,trial,clock_cycles\n")
+
+        # data rows:
+        for s,vs in results.items():
+            for i,v in enumerate(vs):
+                f.write(f"{s},{i+1},{v}\n")
+            
+    print(f"Saved results to {csv_path}")
+
+    # plot results:
+    means = []
+    stdevs = []
+    for s, vs in results.items():
+        means.append(statistics.mean(vs))
+        stdevs.append(statistics.stdev(vs) if len(vs) > 1 else 0)
+
+    plt.figure(figsize=(8,5))
+    plt.errorbar(sizes, means, yerr=stdevs, fmt="o-", label="Mean clock cycles")
+    plt.xlabel("Input size (number of rotations in input file)")
+    plt.ylabel(f"Total Clock cycles (average of {repeats} per size)")
+    plt.title("Day 1 Clock cycles vs Input size")
+    plt.legend()
+    plot_path = out_dir / f"day01_benchmark_{timestamp}.png"
+    plt.savefig(plot_path, dpi=300)
+    plt.close()
+    print(f"Saved results to {plot_path}")
+
     return results
-    pass
 
 
 if __name__ == "__main__":
-    print(benchmark_day01(lo=10, hi=100, n=4, repeats=1, timeout=2))
+    print(benchmark_day01(lo=10, hi=1000, n=4, repeats=5, timeout=2))
