@@ -8,11 +8,21 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from generate_input import gen_day01
-
+from typing import Callable
 CLOCK_CYCLE_RE = re.compile(r"Took\s+(\d+)\s+clock cycles")
 
-def benchmark_day01(lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5, timeout: int = 5) -> dict:
-    """Benchmark the day01 solver
+
+def general_benchmark(
+        # general function inputs:
+        lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5, timeout: int = 5,
+
+        # day-specific configurations:
+        day_dirname: str = "", # name of the day to be tested in the format dayXX, for example "day01", "day10", ...
+        input_generator_function: Callable[[int, str, int], tuple[int, int]] | None = None,  # function to generate input file. arguments are [n: int, fname: str, seed: int]
+        input_desc: str = "",  # short description of input to include on graph
+        day_name: str = "Day X",  # name of day to include as graph title
+    ) -> dict:
+    """Generic benchmark function to generalise functionality for all verilog testbenches
 
     Args:
         lo (int, optional): The smallest input size to benchmark. Defaults to 10.
@@ -20,22 +30,27 @@ def benchmark_day01(lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5,
         n (int, optional): The number of sample points (will be linearly spaced between lo and hi). Defaults to 10.
         repeats (int, optional): Number of trials per input size. Defaults to 5.
         timeout (int, optional): Number of seconds to run each simulation for. Defaults to 5.
+
+    # Todo: write key assumptions / requirements for this function to work
     """
+    # validate inputs:
+    if not input_generator_function:
+        raise ValueError("input file generator function must be provided.")
 
     # setup:
     sizes = np.linspace(lo, hi, n, dtype=int)
     results = {size: [] for size in sizes}
     root = Path(__file__).resolve().parent
-    day01_dir = (root/"../day01").resolve()
+    day_dir = (root / f"../{day_dirname}").resolve()
 
-    # check day01 exists
-    if not day01_dir.exists():
-        raise RuntimeError("day01 directory was not found. are you running this function from the scripts folder?")
+    # check day_dirname exists
+    if not day_dir.exists():
+        raise RuntimeError(f"{day_dirname} directory was not found. are you running this function from the scripts folder?")
 
     original_cwd = Path.cwd()
     
     try:
-        os.chdir(day01_dir)
+        os.chdir(day_dir)
 
         # test all size inputs:
         for size in sizes:
@@ -46,7 +61,7 @@ def benchmark_day01(lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5,
                     input_path = Path(tmp.name)
 
                     # generate input file:
-                    expected_results = gen_day01(n=size, output_filename=str(input_path), seed=trial)
+                    expected_results = input_generator_function(n=size, output_filename=str(input_path), seed=trial)
 
                     # run simulator:
                     try:
@@ -81,7 +96,7 @@ def benchmark_day01(lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5,
     out_dir = root / "benchmarks"
     out_dir.mkdir(exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_path = out_dir / f"day01_benchmark_{timestamp}.csv"
+    csv_path = out_dir / f"{day_dirname}_benchmark_{timestamp}.csv"
 
     with open(csv_path, "w", encoding="utf-8") as f:
         # header row:
@@ -103,17 +118,32 @@ def benchmark_day01(lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5,
 
     plt.figure(figsize=(8,5))
     plt.errorbar(sizes, means, yerr=stdevs, fmt="o-", label="Mean clock cycles")
-    plt.xlabel("Input size (number of rotations in input file)")
+    plt.xlabel(f"Input size ({input_desc})")
     plt.ylabel(f"Total Clock cycles (average of {repeats} per size)")
-    plt.title("Day 1 Clock cycles vs Input size")
+    plt.title(f"{day_name} Clock cycles vs Input size")
     plt.legend()
-    plot_path = out_dir / f"day01_benchmark_{timestamp}.png"
+    plot_path = out_dir / f"{day_dirname}_benchmark_{timestamp}.png"
     plt.savefig(plot_path, dpi=300)
     plt.close()
     print(f"Saved results to {plot_path}")
 
     return results
 
+
+def benchmark_day01(
+    lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5, timeout: int = 5
+) -> dict:
+    return general_benchmark(
+        lo,
+        hi,
+        n,
+        repeats,
+        timeout,
+        day_dirname="day01",
+        input_generator_function=gen_day01,
+        input_desc="number of rotations in input file",
+        day_name="Day 1"
+    )
 
 if __name__ == "__main__":
     print(benchmark_day01(lo=10, hi=1000, n=4, repeats=5, timeout=2))
