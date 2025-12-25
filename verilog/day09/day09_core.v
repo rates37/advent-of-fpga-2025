@@ -312,7 +312,7 @@ module day09_core #(
                         if (pipe_j + 1 < pipe_i) begin
                             pipe_j <= pipe_j + 1;
                         end else begin
-                            $display("Done cycles i=%d / %d", pipe_i, point_count);
+                            // $display("Done cycles i=%d / %d", pipe_i, point_count);
                             pipe_i <= pipe_i + 1;
                             pipe_j <= 0;
                         end
