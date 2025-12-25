@@ -23,6 +23,7 @@ module day09_core #(
     localparam MAX_POINTS = (1<<LOG_MAX_POINTS);
 
     // FSM states:
+    // todo rename states since refactor removed need for p2 stream
     localparam S_IDLE = 0;
     localparam S_READ = 1;
     localparam S_BUILD_SEGMENTS = 2;
@@ -234,19 +235,28 @@ module day09_core #(
                     
                     // start computation:
                     state <= S_PART1;
-                    p1_i <= 0;
-                    p1_j <= 0;
+
+                    // initialise loop variables:
+                    pipe_i <= 1;
+                    pipe_j <= 0;
+                    // clear/reset pipeline
+                    drain_count <= 0;
+                    for (k=0; k<MAX_POINTS; k=k+1) begin
+                        pipe_valid[k] <= 0;
+                        pipe_cut_detected[k] <= 0;
+                        pipe_hit_count[k] <= 0;
+                    end
                 end
 
 
                 S_PART1: begin
-                    // loop ove all unique pairs of points:
-                    if (p1_i < point_count) begin
+                    // loop ove all unique pairs of points: (calcualte part1 and load pipeline at same time)
+                    if (pipe_i < point_count) begin
                         // combinational logic:
-                        p1_x1 = point_x[p1_i];
-                        p1_y1 = point_y[p1_i];
-                        p1_x2 = point_x[p1_j];
-                        p1_y2 = point_y[p1_j];
+                        p1_x1 = point_x[pipe_i];
+                        p1_y1 = point_y[pipe_i];
+                        p1_x2 = point_x[pipe_j];
+                        p1_y2 = point_y[pipe_j];
 
                         p1_dx = (p1_x1 > p1_x2) ? (p1_x1 - p1_x2) : (p1_x2 - p1_x1);
                         p1_dy = (p1_y1 > p1_y2) ? (p1_y1 - p1_y2) : (p1_y2 - p1_y1);
@@ -258,44 +268,16 @@ module day09_core #(
                             part1_result <= p1_area;
                         end
 
-                        // increment loop counters:
-                        if (p1_j + 1 < p1_i) begin
-                            p1_j <= p1_j + 1;
-                        end else begin
-                            p1_i <= p1_i + 1;
-                            p1_j <= 0;
-                        end
-                    end else begin
-                        // finished iterating over pairs of points:
-                        state <= S_PART_2_STREAM;
-                        pipe_i <= 1;
-                        pipe_j <= 0;
-
-                        // initialise pipeline:
-                        for (k=0; k<MAX_POINTS; k=k+1) begin
-                            pipe_valid[k] <= 0;
-                            pipe_cut_detected[k] <= 0;
-                            pipe_hit_count[k] <= 0;
-                        end
-                    end
-                end
-
-                // todo: VITAL: integrate p2 with p1 stage above, it will HALVE simulation time
-                S_PART_2_STREAM: begin
-                    if (pipe_i < point_count) begin
-                        // if ((pipe_i-1) % 50 == 0) begin
-                        //     $display("Done %d/%d", pipe_i, point_count);
-                        // end
-                        // feed data into the first pipeline stage:
+                        // feed next pair of points into first pipeline stage:
                         pipe_rect_x1[0] <= feed_x1;
                         pipe_rect_y1[0] <= feed_y1;
                         pipe_rect_x2[0] <= feed_x2;
                         pipe_rect_y2[0] <= feed_y2;
-                        pipe_minX[0]    <= feed_minX;
-                        pipe_minY[0]    <= feed_minY;
-                        pipe_maxX[0]    <= feed_maxX;
-                        pipe_maxY[0]    <= feed_maxY;
-                        pipe_area[0]    <= feed_area;
+                        pipe_minX[0] <= feed_minX;
+                        pipe_maxX[0] <= feed_maxX;
+                        pipe_minY[0] <= feed_minY;
+                        pipe_maxY[0] <= feed_maxY;
+                        pipe_area[0] <= feed_area;
                         pipe_cut_detected[0] <= stage_cut[0];
                         pipe_hit_count[0] <= stage_ray_hit[0] ? 1 : 0;
                         pipe_valid[0] <= 1;
@@ -316,7 +298,7 @@ module day09_core #(
                             pipe_valid[k] <= pipe_valid[k-1];
                         end
 
-                        // check final pipe line stage output:
+                        // check output from final stage:
                         if (pipe_valid[MAX_POINTS-1]) begin
                             if (!pipe_cut_detected[MAX_POINTS-1] && (pipe_hit_count[MAX_POINTS-1][0] == 1)) begin
                                 if (pipe_area[MAX_POINTS-1] > part2_result) begin
@@ -325,19 +307,22 @@ module day09_core #(
                             end
                         end
 
+
                         // increment loop counters:
                         if (pipe_j + 1 < pipe_i) begin
                             pipe_j <= pipe_j + 1;
                         end else begin
-                            pipe_j <= 0;
+                            $display("Done cycles i=%d / %d", pipe_i, point_count);
                             pipe_i <= pipe_i + 1;
-                        end 
+                            pipe_j <= 0;
+                        end
                     end else begin
-                        // finished -> flush pipeline then done
+                        // finished iterating over pairs of points:
                         state <= S_PART_2_DRAIN;
                         drain_count <= 0;
                     end
                 end
+
 
                 S_PART_2_DRAIN: begin
                     if (drain_count < MAX_POINTS) begin
