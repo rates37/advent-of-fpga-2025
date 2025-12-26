@@ -7,21 +7,26 @@ from pathlib import Path
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-from generate_input import gen_day01
+from generate_input import gen_day01, gen_day02
 from typing import Callable
+
 CLOCK_CYCLE_RE = re.compile(r"Took\s+(\d+)\s+clock cycles")
 
 
 def general_benchmark(
-        # general function inputs:
-        lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5, timeout: int = 5,
-
-        # day-specific configurations:
-        day_dirname: str = "", # name of the day to be tested in the format dayXX, for example "day01", "day10", ...
-        input_generator_function: Callable[[int, str, int], tuple[int, int]] | None = None,  # function to generate input file. arguments are [n: int, fname: str, seed: int]
-        input_desc: str = "",  # short description of input to include on graph
-        day_name: str = "Day X",  # name of day to include as graph title
-    ) -> dict:
+    # general function inputs:
+    lo: int = 10,
+    hi: int = 1000,
+    n: int = 10,
+    repeats: int = 5,
+    timeout: int = 5,
+    # day-specific configurations:
+    day_dirname: str = "",  # name of the day to be tested in the format dayXX, for example "day01", "day10", ...
+    input_generator_function: Callable[[int, str, int], tuple[int, int]]
+    | None = None,  # function to generate input file. arguments are [n: int, fname: str, seed: int]
+    input_desc: str = "",  # short description of input to include on graph
+    day_name: str = "Day X",  # name of day to include as graph title
+) -> dict:
     """Generic benchmark function to generalise functionality for all verilog testbenches
 
     Args:
@@ -45,10 +50,12 @@ def general_benchmark(
 
     # check day_dirname exists
     if not day_dir.exists():
-        raise RuntimeError(f"{day_dirname} directory was not found. are you running this function from the scripts folder?")
+        raise RuntimeError(
+            f"{day_dirname} directory was not found. are you running this function from the scripts folder?"
+        )
 
     original_cwd = Path.cwd()
-    
+
     try:
         os.chdir(day_dir)
 
@@ -57,33 +64,44 @@ def general_benchmark(
             # repeat for each trial:
             for trial in range(repeats):
                 # use a tempfile to generate input into (avoid clutteringg wd)
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tmp:
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".txt", delete=False
+                ) as tmp:
                     input_path = Path(tmp.name)
 
                     # generate input file:
-                    expected_results = input_generator_function(n=size, output_filename=str(input_path), seed=trial)
+                    expected_results = input_generator_function(
+                        n=size, output_filename=str(input_path), seed=trial
+                    )
 
                     # run simulator:
                     try:
                         proc = subprocess.run(
                             ["make", "run", f"INPUT_FILE={input_path}"],
                             capture_output=True,
-                            text=True, timeout=timeout
+                            text=True,
+                            timeout=timeout,
                         )
                     except subprocess.TimeoutExpired:
                         print(f"\tTrial {trial}: timed out")
                         continue
-                    
+
                     stdout = proc.stdout + proc.stderr
 
                     # check expected results appear in the simulation output:
-                    if (str(expected_results[0]) not in stdout) or (str(expected_results[0]) not in stdout):
-                        raise RuntimeError(f"Incorrect output for size={size}, trial={trial}\n\texpected: {expected_results}\nSimulation output:{stdout}")
+                    if (str(expected_results[0]) not in stdout) or (
+                        str(expected_results[0]) not in stdout
+                    ):
+                        raise RuntimeError(
+                            f"Incorrect output for size={size}, trial={trial}\n\texpected: {expected_results}\nSimulation output:{stdout}"
+                        )
 
                     # record clock cycles:
                     mat = CLOCK_CYCLE_RE.search(stdout)
                     if not mat:
-                        raise RuntimeError(f"Number of clock cycles not found in output for size={size}, trial={trial}\nOutput: {stdout}")
+                        raise RuntimeError(
+                            f"Number of clock cycles not found in output for size={size}, trial={trial}\nOutput: {stdout}"
+                        )
                     cycles = int(mat.group(1))
                     results[size].append(cycles)
 
@@ -103,10 +121,10 @@ def general_benchmark(
         f.write("input_size,trial,clock_cycles\n")
 
         # data rows:
-        for s,vs in results.items():
-            for i,v in enumerate(vs):
-                f.write(f"{s},{i+1},{v}\n")
-            
+        for s, vs in results.items():
+            for i, v in enumerate(vs):
+                f.write(f"{s},{i + 1},{v}\n")
+
     print(f"Saved results to {csv_path}")
 
     # plot results:
@@ -116,7 +134,7 @@ def general_benchmark(
         means.append(statistics.mean(vs))
         stdevs.append(statistics.stdev(vs) if len(vs) > 1 else 0)
 
-    plt.figure(figsize=(8,5))
+    plt.figure(figsize=(8, 5))
     plt.errorbar(sizes, means, yerr=stdevs, fmt="o-", label="Mean clock cycles")
     plt.xlabel(f"Input size ({input_desc})")
     plt.ylabel(f"Total Clock cycles (average of {repeats} per size)")
@@ -125,7 +143,7 @@ def general_benchmark(
     plot_path = out_dir / f"{day_dirname}_benchmark_{timestamp}.png"
     plt.savefig(plot_path, dpi=300)
     plt.close()
-    print(f"Saved results to {plot_path}")
+    print(f"Saved plot to {plot_path}")
 
     return results
 
@@ -142,8 +160,25 @@ def benchmark_day01(
         day_dirname="day01",
         input_generator_function=gen_day01,
         input_desc="number of rotations in input file",
-        day_name="Day 1"
+        day_name="Day 1",
     )
 
+
+def benchmark_day02(
+    lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5, timeout: int = 5
+) -> dict:
+    return general_benchmark(
+        lo,
+        hi,
+        n,
+        repeats,
+        timeout,
+        day_dirname="day02",
+        input_generator_function=gen_day02,
+        input_desc="number of ranges in input file",
+        day_name="Day 2",
+    )
+
+
 if __name__ == "__main__":
-    print(benchmark_day01(lo=10, hi=1000, n=4, repeats=5, timeout=2))
+    print(benchmark_day02(lo=10, hi=100, n=4, repeats=1, timeout=2))
