@@ -180,7 +180,7 @@ def gen_day02(
         return total
 
     # setup:
-    # random.seed(seed)
+    random.seed(seed)
     MAX_GAP = 2**40  # maximum difference between lower and upper value of range
     MAX_VAL = (1 << 60) - 1
 
