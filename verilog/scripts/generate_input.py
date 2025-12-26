@@ -211,3 +211,51 @@ def gen_day02(
         f.write(",".join(f"{lo}-{hi}" for (lo, hi) in ranges))
 
     return (p1_ans, p2_ans)
+
+
+def gen_day03(
+    n: int, output_filename: str, seed: int = DEFAULT_SEED
+) -> tuple[int, int]:
+    # n = input size
+    # output_filename = self explanatory
+    # returns two ints: (part1_answer, part2_answer)
+
+    # function to solve task:
+    def get_bank_joltage_n(bank: str, n: int = 2):
+        selected = [""] * n
+        pos = -1
+
+        for j in range(n):
+            m = bank[pos + 1]
+            mPos = pos + 1
+            for i in range(pos + 1, len(bank) - (n - j - 1)):
+                if bank[i] > m:
+                    m = bank[i]
+                    mPos = i
+            selected[j] = m
+            pos = mPos
+        total = 0
+        for c in selected:
+            total = total * 10 + int(c)
+        return total
+
+    # setup:
+    random.seed(seed)
+
+    # generate inputs and expected outputs:
+    banks = []
+    p1_ans = 0
+    p2_ans = 0
+
+    for _ in range(n):
+        bank_length = random.randint(12, 60)
+        bank = "".join(random.choice("123456789") for _ in range(bank_length))
+        banks.append(bank)
+        p1_ans += get_bank_joltage_n(bank, 2)
+        p2_ans += get_bank_joltage_n(bank, 12)
+
+    # write to file:
+    with open(output_filename, "w") as f:
+        f.write("\n".join(banks))
+
+    return p1_ans, p2_ans

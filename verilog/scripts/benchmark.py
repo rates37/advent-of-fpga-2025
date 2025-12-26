@@ -7,7 +7,7 @@ from pathlib import Path
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-from generate_input import gen_day01, gen_day02
+from generate_input import gen_day01, gen_day02, gen_day03
 from typing import Callable
 
 CLOCK_CYCLE_RE = re.compile(r"Took\s+(\d+)\s+clock cycles")
@@ -61,6 +61,7 @@ def general_benchmark(
 
         # test all size inputs:
         for size in sizes:
+            print(f"doing size {size}")
             # repeat for each trial:
             for trial in range(repeats):
                 # use a tempfile to generate input into (avoid clutteringg wd)
@@ -180,5 +181,21 @@ def benchmark_day02(
     )
 
 
+def benchmark_day03(
+    lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5, timeout: int = 5
+) -> dict:
+    return general_benchmark(
+        lo,
+        hi,
+        n,
+        repeats,
+        timeout,
+        day_dirname="day03",
+        input_generator_function=gen_day03,
+        input_desc="number of banks",
+        day_name="Day 3",
+    )
+
+
 if __name__ == "__main__":
-    print(benchmark_day02(lo=10, hi=100, n=4, repeats=1, timeout=2))
+    print(benchmark_day03(lo=10, hi=1000, n=4, repeats=1, timeout=20))
