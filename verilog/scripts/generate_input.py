@@ -259,3 +259,77 @@ def gen_day03(
         f.write("\n".join(banks))
 
     return p1_ans, p2_ans
+
+
+def gen_day04(
+    n: int, output_filename: str, seed: int = DEFAULT_SEED
+) -> tuple[int, int]:
+    # n = input size
+    # output_filename = self explanatory
+    # returns two ints: (part1_answer, part2_answer)
+
+    random.seed(seed)
+    density = random.uniform(
+        0.45, 0.65
+    )  # gives a relatively even spread without trivialising
+
+    grid = []
+    for _ in range(n):
+        row = ["@" if random.random() < density else "." for _ in range(n)]
+        grid.append(row)
+
+    # calculate expected answers:
+    DIRS = [
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+        (0, -1),
+        (0, 1),
+        (1, -1),
+        (1, 0),
+        (1, 1),
+    ]
+
+    def count_neighbors(grid, r, c):
+        h = len(grid)
+        w = len(grid[0])
+        cnt = 0
+        for dr, dc in DIRS:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < h and 0 <= nc < w:
+                if grid[nr][nc] == "@":
+                    cnt += 1
+        return cnt
+
+    def find_accessible(grid):
+        h = len(grid)
+        w = len(grid[0])
+        acc = []
+        for r in range(h):
+            for c in range(w):
+                if grid[r][c] == "@" and count_neighbors(grid, r, c) < 4:
+                    acc.append((r, c))
+        return acc
+
+    p1_ans = 0
+    for r in range(n):
+        for c in range(n):
+            if grid[r][c] == "@" and count_neighbors(grid, r, c) < 4:
+                p1_ans += 1
+    p2_ans = 0
+    grid_copy = [r[:] for r in grid]
+
+    while True:
+        accessible = find_accessible(grid_copy)
+        if not accessible:
+            break
+
+        p2_ans += len(accessible)
+        for r, c in accessible:
+            grid_copy[r][c] = "."
+
+    # write to output file:
+    with open(output_filename, "w") as f:
+        for r in grid:
+            f.write("".join(r) + "\n")
+    return (p1_ans, p2_ans)
