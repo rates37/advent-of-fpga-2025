@@ -333,3 +333,87 @@ def gen_day04(
         for r in grid:
             f.write("".join(r) + "\n")
     return (p1_ans, p2_ans)
+
+
+def gen_day05(
+    n: tuple[int, int], output_filename: str, seed: int = DEFAULT_SEED
+) -> tuple[int, int]:
+    # n = num ranges, num queries
+    # output_filename = self explanatory
+    # returns two ints: (part1_answer, part2_answer)
+
+    def merge_intervals(intervals):
+        if not intervals:
+            return []
+        intervals = sorted(intervals)
+        merged = [intervals[0]]
+        for l, r in intervals[1:]:
+            pl, pr = merged[-1]
+            if l <= pr + 1:
+                merged[-1][1] = max(pr, r)
+            else:
+                merged.append([l, r])
+        return merged
+
+    def union_size(intervals):
+        intervals = merge_intervals(intervals)
+        total = 0
+        for l, r in intervals:
+            total += r - l + 1
+        return total
+
+    MAX_RANGE = int(10e5)
+    INT64_MAX = (1 << 50) - 1
+
+    n_ranges, n_queries = n
+    random.seed(seed)
+
+    ranges = []
+    merged = []
+
+    # generate ranges:
+    while len(ranges) < n_ranges:
+        bits = random.randint(1, 50)
+        lo = random.randrange(0, 1 << (bits - 1))
+        width = random.randint(0, MAX_RANGE)
+        hi = lo + width
+
+        if hi > INT64_MAX:
+            hi = INT64_MAX
+
+        # check answers are still within 64 bit integer range
+        possible_next = ranges + [[lo, hi]]
+        next_merged = merge_intervals(possible_next)
+        size = union_size(next_merged)
+
+        if size > INT64_MAX:
+            continue
+
+        ranges.append([lo, hi])
+        merged = next_merged
+
+    # generate query ids:
+    minId = max(0, min(min(r) for r in ranges))
+    maxId = min(INT64_MAX, max(max(r) for r in ranges))
+    queries = [random.randint(minId, maxId) for _ in range(n_queries)]
+
+    # calculate p1 answer:
+    p1_ans = 0
+    for q in queries:
+        for l, r in merge_intervals(ranges):
+            if l <= q <= r:
+                p1_ans += 1
+    p2_ans = union_size(merged)
+
+    # write to output file:
+    with open(output_filename, "w") as f:
+        for l, r in ranges:
+            f.write(f"{l}-{r}\n")
+        f.write("\n")
+        for q in queries:
+            f.write(f"{q}\n")
+    return p1_ans, p2_ans
+
+
+if __name__ == "__main__":
+    print(gen_day05([20, 20], "day05-20-100.txt"))
