@@ -1,10 +1,41 @@
 # Advent of FPGA 2025
-Advent of Code puzzles, solved in Hardware, with love.
 
 This repo contains my attempts at solving Advent of Code 2025 problems in HDL. All works are my own
 unless otherwise stated (this will be clearly stated in file headers and readmes where possible).
 
 Some ideas for solving puzzles my come from [my attempts at solving these problems in software](https://github.com/rates37/aoc-2025).
+
+
+
+# Running each simulator:
+
+## Verilog:
+
+Usage instructions coming soon...
+
+`cd` into the relevant day folder (e.g., `cd verilog/day02`). Then run `make run -- INPUT_FILE="path-to-your-txt.txt"`.
+make run -- INPUT_FILE="sample_input.txt"
+
+
+# Todos / Task List:
+
+- [ ] Finish day 11
+- [ ] Finish day 12
+- [ ] Day 10 part 1
+- [ ] Day 8 part 2
+
+- [ ] Check todos in completed days to resolve issues, add documentation, etc.
+- [ ] Document the hell out of the interesting days (day 2, 3, 5, 6, 9)
+
+- [ ] Attempt days 1-X in Hardcaml
+- [ ] Write tons of readme stuff to explain
+- [ ] Continue benchmarking completed days
+- [ ] Attempt synthesis / running on DE-10 lite or DE1-SoC w/ Quartus
+
+### Low priority / Not sure if can be bothered/possible
+- [ ] Day 8 part 1 (if possible)
+- [ ] Day 10 part 2 (if possible)
+- [ ] Move from iverilog to verilator for better simulation speed
 
 
 # Usage Notice
