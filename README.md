@@ -227,7 +227,7 @@ My hardware implementation closely aligns with the Python solution linked above.
 My day 2 solution was evaluated in a similar manner to day 1. It was similarly evaluated over an average/stdev of 5 runs. Tested with varying the number of input ranges, and those ranges can span the range of 64 bit integers. My puzzle input had 37 ranges to evaluate. The plot below evaluates number of ranges between 10 and 1000 (significantly larger than the real puzzle input).
 
 <p align="center">
-<img src="/Users/satya/Developer/advent-of-fpga-2025/verilog/scripts/benchmarks/day02_benchmark_20251230_010612.png" alt="Plot of clock cycles vs input size" width="720">
+<img src="verilog/scripts/benchmarks/day02_benchmark_20251230_010612.png" alt="Plot of clock cycles vs input size" width="720">
 </p>
 
 Since the solution I outlined above is $\mathcal{O}(1)$ for each range, we see that the number of clock cycles appears to scale linearly with respect to the number of ranges, and is effectively invariant to the actual numbers that the range spans.
