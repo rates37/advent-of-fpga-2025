@@ -109,8 +109,7 @@ module day11_core #(
         .valid_in(nr_valid),
 
         .node_id_out(nr_id),
-        .done(nr_done),
-        .is_new()  // todo: actually not necessary I think?
+        .done(nr_done)
     );
     graph_manager gm_u0(
         .clk(clk),
@@ -439,8 +438,7 @@ module name_resolver #(
     input wire valid_in,
 
     output reg [LOG2_MAX_NODES-1:0] node_id_out,
-    output reg done,
-    output reg is_new // whether the node that was just added was in the lookup table already or not
+    output reg done
 );
 
     // simple linear store for now
@@ -458,7 +456,6 @@ module name_resolver #(
             done <= 0;
         end else begin
             done <= 0;
-            is_new <= 0;
             if (valid_in && !searching) begin
                 searching <= 1;
                 search_idx <= 0;
@@ -480,7 +477,6 @@ module name_resolver #(
                     name_store[node_count] <= name_in;
                     node_id_out <= node_count;
                     node_count <= node_count + 1;
-                    is_new <= 1;
                     // end search
                     done <= 1;
                     searching <= 0;
