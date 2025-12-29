@@ -63,7 +63,9 @@ This means that since the decoder is reading input characters one by one and the
 
 There isn't much interesting to discuss for day 1's puzzle due to its simplicity and innate serial nature. I'll use this space to give a brief introduction to the general high-level structure of solutions. Each day generally has the following structure:
 
+<p align="center">
 <img src="docs/img/online-problem_structure.png" alt="High-level Module Structure" width="720">
+</p>
 
 For day 1, this structure has been emphasised by the separate modules / files:
 
