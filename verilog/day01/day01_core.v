@@ -1,7 +1,7 @@
 // synthesisable module that reads ASCII data from ROM, solves puzzle, and outputs results
 // is a synthesisable module
 module day01_core #(
-    parameter N_ADDR_BITS = 16, // number of bits required to fully address the ROM module // should ensure is set to 
+    parameter N_ADDR_BITS = 16, // number of bits required to fully address the ROM module
     parameter INPUT_DATA_WIDTH = 16,
     parameter OUTPUT_DATA_WIDTH = 16
 ) (
