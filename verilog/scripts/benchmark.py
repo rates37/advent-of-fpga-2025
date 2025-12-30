@@ -7,7 +7,7 @@ from pathlib import Path
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-from generate_input import gen_day01, gen_day02, gen_day03, gen_day04
+from generate_input import gen_day01, gen_day02, gen_day03, gen_day04, gen_day07
 from generate_input import gen_day06_4_row as gen_day06
 from typing import Callable
 
@@ -229,15 +229,32 @@ def benchmark_day06(
     )
 
 
+def benchmark_day07(
+    lo: int = 10, hi: int = 250, n: int = 10, repeats: int = 5, timeout: int = 20
+) -> dict:
+    return general_benchmark(
+        lo,
+        hi,
+        n,
+        repeats,
+        timeout,
+        day_dirname="day07",
+        input_generator_function=gen_day07,
+        input_desc="Dimension of grid",
+        day_name="Day 7",
+    )
+
 def benchmark_all() -> None:
     benchmark_day01(lo=10, hi=1000, n=5, repeats=5)
     benchmark_day02(lo=10, hi=100, n=5, repeats=5)
     benchmark_day03(lo=10, hi=1000, n=5, repeats=5)
     benchmark_day04(lo=10, hi=140, n=5, repeats=5, timeout=30)
 
+    benchmark_day06(lo=10, hi=1000, n=5, repeats=5, timeout=5)
+
 
 if __name__ == "__main__":
     # print(benchmark_day02(lo=10, hi=1000, n=4, repeats=5, timeout=30))
     # benchmark_day03(lo=10, hi=1000, n=4, repeats=5, timeout=30)
-    benchmark_day06(lo=10, hi=1000, n=5, repeats=5, timeout=5)
+    benchmark_day07(lo=10, hi=250, n=5, repeats=5, timeout=5)
     # benchmark_all()
