@@ -517,6 +517,14 @@ def gen_day06(
 
     return part1(lines), part2(lines)
 
+def gen_day06_4_row(
+    n: int, output_filename: str, seed: int = DEFAULT_SEED
+) -> tuple[int, int]:
+    # n = number of operators, always uses 4 rows of numbers (like real puzzle input)
+    # output_filename = self explanatory
+    # returns two ints: (part1_answer, part2_answer)
+    return gen_day06((4, int(n)), output_filename, seed)
+
 
 if __name__ == "__main__":
     print(gen_day06((4, 1000), "day06-4-1000.txt", 42))

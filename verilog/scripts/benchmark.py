@@ -8,6 +8,7 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from generate_input import gen_day01, gen_day02, gen_day03, gen_day04
+from generate_input import gen_day06_4_row as gen_day06
 from typing import Callable
 
 CLOCK_CYCLE_RE = re.compile(r"Took\s+(\d+)\s+clock cycles")
@@ -50,9 +51,7 @@ def general_benchmark(
 
     # check day_dirname exists
     if not day_dir.exists():
-        raise RuntimeError(
-            f"{day_dirname} directory was not found. are you running this function from the scripts folder?"
-        )
+        raise RuntimeError(f"{day_dirname} directory was not found at {day_dir}")
 
     original_cwd = Path.cwd()
 
@@ -61,9 +60,10 @@ def general_benchmark(
 
         # test all size inputs:
         for size in sizes:
-            print(f"doing size {size}")
+            print(f"\t{day_name}: Running tests for size = {size}")
             # repeat for each trial:
             for trial in range(repeats):
+                print(f"\t\trunning trial {trial + 1}")
                 # use a tempfile to generate input into (avoid clutteringg wd)
                 with tempfile.NamedTemporaryFile(
                     mode="w", suffix=".txt", delete=False
@@ -213,5 +213,31 @@ def benchmark_day04(
     )
 
 
+def benchmark_day06(
+    lo: int = 10, hi: int = 1000, n: int = 10, repeats: int = 5, timeout: int = 20
+) -> dict:
+    return general_benchmark(
+        lo,
+        hi,
+        n,
+        repeats,
+        timeout,
+        day_dirname="day06",
+        input_generator_function=gen_day06,
+        input_desc="Number of math problems to solve",
+        day_name="Day 6",
+    )
+
+
+def benchmark_all() -> None:
+    benchmark_day01(lo=10, hi=1000, n=5, repeats=5)
+    benchmark_day02(lo=10, hi=100, n=5, repeats=5)
+    benchmark_day03(lo=10, hi=1000, n=5, repeats=5)
+    benchmark_day04(lo=10, hi=140, n=5, repeats=5, timeout=30)
+
+
 if __name__ == "__main__":
-    print(benchmark_day04(lo=10, hi=149, n=4, repeats=5, timeout=30))
+    # print(benchmark_day02(lo=10, hi=1000, n=4, repeats=5, timeout=30))
+    # benchmark_day03(lo=10, hi=1000, n=4, repeats=5, timeout=30)
+    benchmark_day06(lo=10, hi=1000, n=5, repeats=5, timeout=5)
+    # benchmark_all()
