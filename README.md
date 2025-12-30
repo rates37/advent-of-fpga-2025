@@ -9,27 +9,24 @@ Some ideas for solving puzzles my come from [my attempts at solving these proble
 
 The table below summarises which problems have been successfully solved, the HDL used (Verilog/Hardcaml), and the number of clock cycles used to solve my personal puzzle's input for each day. The 'size' of each puzzle's input has been noted for each day (using my personal puzzle input file). The discussions below often test with various size inputs, not just my personal puzzle inputs. As per [the advent of code rules](https://adventofcode.com/2025/about#faq_copying), sharing of actual inputs is not permitted, so feel free to provide your own input text files (these should be formatted in the exact same format as the Advent of Code site provides). However, in my own investigation and benchmarking of my designs, I wrote my own scripts to generate sample inputs of varying sizes. These functions can be found in [`generate_input.py`](/verilog/scripts/generate_input.py).
 
+| Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                           | Logic Element Usage |
+| --- | ------------------------------ | ------------ | ---------------------------------------------------- | ------------------- |
+| 1   | Verilog                        | 19691        | 4780 rotations                                       |                     |
+| 2   | Verilog                        | 1729         | 38 ranges                                            | 9028 (18%)          |
+| 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                       | 10657 (21%)         |
+| 4   | Verilog                        | 27943        | 137 x 137 grid                                       |                     |
+| 5   | Verilog                        | 35614        | 177 ranges, 1000 query IDs                           |                     |
+| 6   | Verilog                        | 33157        | 4 numeric rows, 1000 operators, ~3709 chars per line |                     |
+| 7   | Verilog                        | 40755        | 142 x 142 grid                                       |                     |
+| 8   | Not Yet                        |              |                                                      |                     |
+| 9   | Verilog                        | 129044       | 496 coordinates                                      |                     |
+| 10  | Not yet                        |              |                                                      |                     |
+| 11  | Verilog                        | 656629       | 583 device names                                     |                     |
+| 12  | Not yet                        |              |                                                      |                     |
 
-| Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                                 | Logic Element Usage   |
-|-----|--------------------------------|--------------|------------------------------------------------------------|-----------------------|
-| 1   | Verilog                        | 19691        | 4780 rotations                                             |                       |
-| 2   | Verilog                        | 1729         | 38 ranges                                                  | 9028 (18%)            |
-| 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                             | 10657 (21%)          |
-| 4   | Verilog                        | 27943        | 137 x 137 grid                                             |                       |
-| 5   | Verilog                        | 35614        | 177 ranges, 1000 query IDs                                 |                       |
-| 6   | Verilog                        | 33157        | 4 numeric rows, 1000 operators, ~3709 chars per line       |                       |
-| 7   | Verilog                        | 40755        | 142 x 142 grid                                             |                       |
-| 8   | Not Yet                        |              |                                                            |                       |
-| 9   | Verilog                        | 129044       | 496 coordinates                                            |                       |
-| 10  | Not yet                        |              |                                                            |                       |
-| 11  | Verilog                        | 656629       | 583 device names                                           |                       |
-| 12  | Not yet                        |              |                                                            |                       |
-
-
-<!-- 
+<!--
 Note: day 9 takes a LONG time to run (about 5 minutes on my Macbook Pro) the simulation since simulating the pipeline of 512 segment modules
  -->
-
 
 # How to run:
 
@@ -43,7 +40,7 @@ Uses [iverilog](https://steveicarus.github.io/iverilog/) as a simulator, for sim
 user@machine ~/advent-of-fpga-2025 $ cd ./verilog/day02
 
 user@machine ~/advent-of-fpga-2025/day02 $ make run
-iverilog -o day02_tb.out -Pday02_tb.INPUT_DATA_FILENAME=\"input.txt\" day02_tb.v day02_core.v ../utils/rom.v period_summer.v range_summer.v 
+iverilog -o day02_tb.out -Pday02_tb.INPUT_DATA_FILENAME=\"input.txt\" day02_tb.v day02_core.v ../utils/rom.v period_summer.v range_summer.v
 vvp day02_tb.out
 INFO: Day02 solver started.
 Day 2 Complete
@@ -53,7 +50,7 @@ Took 1729 clock cycles
 day02_tb.v:90: $finish called at 17385000 (1ps)
 
 user@machine ~/advent-of-fpga-2025/day02 $ make run INPUT_FILE="sample_input.txt"
-iverilog -o day02_tb.out -Pday02_tb.INPUT_DATA_FILENAME=\"sample_input.txt\" day02_tb.v day02_core.v ../utils/rom.v period_summer.v range_summer.v 
+iverilog -o day02_tb.out -Pday02_tb.INPUT_DATA_FILENAME=\"sample_input.txt\" day02_tb.v day02_core.v ../utils/rom.v period_summer.v range_summer.v
 vvp day02_tb.out
 INFO: Day02 solver started.
 Day 2 Complete
@@ -62,7 +59,6 @@ Part 2 Result: 4174379265
 Took 561 clock cycles
 day02_tb.v:90: $finish called at 5705000 (1ps)
 ```
-
 
 # Design Approaches / Discussion
 
@@ -74,9 +70,9 @@ This task very naturally lends itself to a simple FSM that tracks the dial's cur
 
 The general logic flow in my design for day 1 is as follows:
 
-* The decoder module reads the input character by character and converts ASCII into a rotation 'instruction', which is comprised of a single bit to indicate direction, along with a number to indicate how many dial positions to rotate by. 
+- The decoder module reads the input character by character and converts ASCII into a rotation 'instruction', which is comprised of a single bit to indicate direction, along with a number to indicate how many dial positions to rotate by.
 
-* When the decoder encounters a newline or end of file, it asserts a `valid_pulse` output flag, which triggers the solver module to update its model of the dial, and the puzzle output registers accordingly.
+- When the decoder encounters a newline or end of file, it asserts a `valid_pulse` output flag, which triggers the solver module to update its model of the dial, and the puzzle output registers accordingly.
 
 This means that since the decoder is reading input characters one by one and the solver module can perform each instruction with a single clock cycle, the decoder is the bottleneck of the system. This would suggest that the duration to solve the puzzle scales linearly with the number of input characters / number of rotations in the input file.
 
@@ -88,11 +84,11 @@ There isn't much interesting to discuss for day 1's puzzle due to its simplicity
 
 For day 1, this structure has been emphasised by the separate modules / files:
 
-* The solver logic is in [`solver.v`](verilog/day01/solver.v)
-* The decoder logic is in [`decoder_fsm.v`](verilog/day01/decoder_fsm.v)
-* The encapsulating module is in [`day01_core.v`](verilog/day01/day01_core.v)
-* The ROM module is in [`rom.v`](verilog/utils/rom.v)
-* The testbench is in [`day01_tb.v`](verilog/day01/day01_tb.v)
+- The solver logic is in [`solver.v`](verilog/day01/solver.v)
+- The decoder logic is in [`decoder_fsm.v`](verilog/day01/decoder_fsm.v)
+- The encapsulating module is in [`day01_core.v`](verilog/day01/day01_core.v)
+- The ROM module is in [`rom.v`](verilog/utils/rom.v)
+- The testbench is in [`day01_tb.v`](verilog/day01/day01_tb.v)
 
 For future days, often the decoding and solving logic are either able be done in parallel or are more inter-related, and have just been written directly into the encapsulating "core" module.
 
@@ -120,10 +116,9 @@ module day01_core #(
 );
 ```
 
-
 ### Benchmarking and Evaluation
 
-This design's performance was evaluated on various input sizes ranging from 10 to 1000 rotations, using the number of clock cycles as a rudimentary performance benchmark. To run these benchmarks yourself, you can use the `benchmark_day01` function from [`benchmark.py`](verilog/scripts/benchmark.py#L152) (will generate test input files, run the testbench and check that the expected answers are correct, and output a plot like the one seen below, as well as raw csv data from the benchmarks). 
+This design's performance was evaluated on various input sizes ranging from 10 to 1000 rotations, using the number of clock cycles as a rudimentary performance benchmark. To run these benchmarks yourself, you can use the `benchmark_day01` function from [`benchmark.py`](verilog/scripts/benchmark.py#L152) (will generate test input files, run the testbench and check that the expected answers are correct, and output a plot like the one seen below, as well as raw csv data from the benchmarks).
 
 In the plot below, clock cycles were measured over an average of 5 trials per input size (each trial is a unique randomly generated input with the same number of rotations). Error bars showing stdev are also included.
 
@@ -133,23 +128,19 @@ In the plot below, clock cycles were measured over an average of 5 trials per in
 
 As expected, the number of clock cycles required scales linearly with the number of rotations in the input file.
 
-
 ### Scalability, Efficiency, and Architecture
 
 Since all that this module needs to store is the current dial position and the outputs from part 1 and 2, this design will typically use a constant amount of logic/registers.
 
 For inputs where the accumulated results will exceed $2^{16}-1$, the parameter `OUTPUT_DATA_WIDTH` should be increased, which will increase the number of registers used by the solver module. For inputs where the amount rotated by will exceed $2^{16}-1$, the parameter `INPUT_DATA_WIDTH` should be increased, which will increase the number of registers used in the decoder module, as well as the width of the wire that passes rotation amount from the decoder to the solver module. Both of these cases are highly unlikely given the nature of the puzzle.
 
-
-
 ## Day 2:
 
 Day 2's puzzle involved determining the number of 'invalid' numbers in a series of ranges of positive integers. Invalid numbers are defined as follows:
 
-* For part 1: An invalid number is a number with $D$ digits, that is formed by taking a number with $D/2$ digits and repeating it twice. For example, $123123$ is invalid because it can be formed by repeating $123$ twice.
+- For part 1: An invalid number is a number with $D$ digits, that is formed by taking a number with $D/2$ digits and repeating it twice. For example, $123123$ is invalid because it can be formed by repeating $123$ twice.
 
-
-* For part 2: An invalid number is a number with $D$ digits that is formed by repeating a number with $L$ digits (where $L \lt D$) at least twice. For example $121212$ is invalid because it can be formed by repeating $12$ three times.
+- For part 2: An invalid number is a number with $D$ digits that is formed by repeating a number with $L$ digits (where $L \lt D$) at least twice. For example $121212$ is invalid because it can be formed by repeating $12$ three times.
 
 My approach for this involved reducing this from an iterative programming problem to a simple maths sum. I'll briefly go over the way I arrived at this answer below:
 
@@ -165,9 +156,10 @@ func sum_invalid_in_range(A, B):
             total <- total + x
     return x
 ```
+
 However, this approach is extremely inefficient, since the longer the bounds of the range are, the more valid numbers that will needlessly be inspected.
 
-So rather than iterative over *all* numbers in the range from $A$ to $B$, we could instead just take the first half of the starting number (call it the "seed"), and check if repeating it twice is less than the upper limit of the range. We can then just increment the first half of the number and continue this process. This way, instead of iterating over all numbers in the range, we are simply iterating over invalid numbers until we exceed the limit of the range. This might look like the following:
+So rather than iterative over _all_ numbers in the range from $A$ to $B$, we could instead just take the first half of the starting number (call it the "seed"), and check if repeating it twice is less than the upper limit of the range. We can then just increment the first half of the number and continue this process. This way, instead of iterating over all numbers in the range, we are simply iterating over invalid numbers until we exceed the limit of the range. This might look like the following:
 
 ```
 func sum_invalid_in_range_v2(A, B):
@@ -189,7 +181,7 @@ While it doesn't look exactly like an arithmetic series, we can express it as th
 
 $$
 \begin{align*}
-\text{sum} &= &123 &+ &124 &+ &125 &+ &126 &+ &127 &+ \\  &  &123000 &+ &124000 &+ &125000 &+ &126000 &+ &127000 \\ 
+\text{sum} &= &123 &+ &124 &+ &125 &+ &126 &+ &127 &+ \\  &  &123000 &+ &124000 &+ &125000 &+ &126000 &+ &127000 \\
 &= &(123 &+ &124 &+ &125 &+ &126 &+ &127) &+ \\  & &1000 ( 123 &+ &124 &+ &125 &+ &126 &+ &127 )
 \end{align*}
 $$
@@ -204,22 +196,21 @@ Okay, so now this gives us a $\mathcal{O}(1)$ formula to find the sum of invalid
 
 Great, but part 2 complicates things a little, by allowing any number of repetitions >= 2. This part uses the same core logic as above, but requires careful handling of seeds of different length. I'll start by explaining the general approach, then highlighting the flaw and how my solution overcomes it.
 
-
 We can easily find multipliers that can "concatenate" a number with itself many times. The multiplier $M$ is a decimal number with 0s in all digit places except those places that are at multiples of $L$ (the length of the seed), where it is 1 (**using zero-indexing of digits**). As an example, to "concatenate" the number 123 with itself three times, we would multiply it by $M = 1001001$. This idea uses a similar concept to how shift-and-add multiplier circuits work (just using decimal rather than binary).
 
 So, we can simply use seeds of different length from length 1 to half the length of the numbers in the target range. For example, if we are looking at a range $[123456, 753213]$, then we would check seeds of length 1, 2, and 3, since invalid numbers with 6 digits can be formed by any of:
 
-* repeating a 1-digit number 6 times
-* repeating a 2-digit number 3 times
-* repeating a 3-digit number 2 times
+- repeating a 1-digit number 6 times
+- repeating a 2-digit number 3 times
+- repeating a 3-digit number 2 times
 
-At first glance, it seems like this would work, and produces correct outputs for many ranges, however, it fails to account for the case where an invalid number is included in a sum multiple times because it falls into one or more of these options. 
+At first glance, it seems like this would work, and produces correct outputs for many ranges, however, it fails to account for the case where an invalid number is included in a sum multiple times because it falls into one or more of these options.
 
 For example, the number 111111 may be:
 
-* generated by the seed 1 being repeated 6 times
-* generated by the seed 11 being repeated 3 times
-* generated by the seed 111 being repeated 2 times
+- generated by the seed 1 being repeated 6 times
+- generated by the seed 11 being repeated 3 times
+- generated by the seed 111 being repeated 2 times
 
 If we naively sum the results for seeds of length 1,2,3 we will have counted 111111 three times. Instead, we can only check seeds with a length that is a **maximal proper divisor** of the length of the numbers in the target range. This eliminates cases like 12121212 being counted twice by $L=2$ and $L=4$, because 2 is not a maximal proper divisor. However it still doesn't account for the 111111 case, since it would still be counted in $L=2$ and $L=3$ sums.
 
@@ -233,13 +224,11 @@ To help with implementation, I first coded up this approach in Python, which can
 
 My hardware implementation closely aligns with the Python solution linked above. I have:
 
-* A [`period_summer`](verilog/day02/period_summer.v) module, that computes the sum of all $D$-digit numbers in the range $[A, B]$ that are formed by repeating an $L$-digit number, where $D$ and $L$ are inputs to the module.
+- A [`period_summer`](verilog/day02/period_summer.v) module, that computes the sum of all $D$-digit numbers in the range $[A, B]$ that are formed by repeating an $L$-digit number, where $D$ and $L$ are inputs to the module.
 
-* A [`range_summer`](verilog/day02/range_summer.v) module, that evaluates a sum for an entire range, performing adding the sums with seeds of length that is a maximal proper divisor, and subtracting the sums with seeds of length that is the gcd of all maximal proper divisors. It then uses a `period_summer` submodule to evaluate each of these sums.
+- A [`range_summer`](verilog/day02/range_summer.v) module, that evaluates a sum for an entire range, performing adding the sums with seeds of length that is a maximal proper divisor, and subtracting the sums with seeds of length that is the gcd of all maximal proper divisors. It then uses a `period_summer` submodule to evaluate each of these sums.
 
-* A [`day02_core`](verilog/day02/day02_core.v) module that encapsulates all solution logic and exposes a similar I/O interface to all other days. This module does the work of decoding input, splitting input ranges (where the lower and upper limits of the range my be of different lengths) into separate ranges where both limits are the same length, and accumulating the results for part 1 and part 2.
-
-
+- A [`day02_core`](verilog/day02/day02_core.v) module that encapsulates all solution logic and exposes a similar I/O interface to all other days. This module does the work of decoding input, splitting input ranges (where the lower and upper limits of the range my be of different lengths) into separate ranges where both limits are the same length, and accumulating the results for part 1 and part 2.
 
 ### Benchmarking and Evaluation
 
@@ -259,12 +248,10 @@ There is a possibility for improvement by adding additional `period_summer` subm
 
 ### Quartus Synthesis Results
 
-
-
-
 ## Day 3:
 
 ### Approach Description:
+
 Day three's problem was about selecting batteries from battery banks to achieve a maximum joltage. This puzzle is essentially a task to find the largest increasing subsequences for each row of the input of length 2 (for part 1) and length 12 (for part 2).
 
 A naive approach to solving this (and [the approach I took when initially solving this problem in C++](https://github.com/rates37/aoc-2025/blob/main/day03/day03.cpp)) is to take each row and iterate over it two/twelve times to find the largest increasing subsequence of length 2/12, greedily selecting the largest character found in a given range. Brief pseudocode for this approach is shown below:
@@ -286,7 +273,7 @@ func get_largest_inc_subseq(s: string, n: integer):
             if s[i] > bestChar:
                 bestChar <- s[i]
                 bestPos <- i
-        
+
         // add largest character to total and update position:
         total <- total * 10 + int(bestChar)
         pos <- bestPos
@@ -304,7 +291,7 @@ func get_largest_inc_subseq(s: string, n: integer):
     for i in [1 .. length(s)]:
         d <- int(s[i])
         posList[d].append(i)
-    
+
     // build output:
     pos <- 0
     total <- 0
@@ -321,7 +308,7 @@ func get_largest_inc_subseq(s: string, n: integer):
     return total
 ```
 
-This approach sacrifices additional memory to save on the work of scanning the input string multiple times. However in software, this equates to the same amount (if not more) as the original approach. 
+This approach sacrifices additional memory to save on the work of scanning the input string multiple times. However in software, this equates to the same amount (if not more) as the original approach.
 
 ### Implementation in hardware
 
@@ -329,16 +316,15 @@ Rather than using lists, in hardware, we can use bitmaps and combinational logic
 
 My approach makes use of 10 position bitmaps to store the input row, where:
 
-* `bitmap[9]` contains a `1` at every index where the digit is a 9
-* `bitmap[8]` contains a `1` at every index where the digit is a 8
-* ...
+- `bitmap[9]` contains a `1` at every index where the digit is a 9
+- `bitmap[8]` contains a `1` at every index where the digit is a 8
+- ...
 
 For each bitmap from 9 to 0, we can apply a mask to only consider the valid range. If the masked bitmap is not zero, we immediately know that the current digit is the best digit and we don't need to check smaller digits. A priority encoder can then be used to find the first set bit index, so we know how to update the current pos.
 
 This effectively turns a search over a string (may have arbitrary length) into a search over a fixed size 10 possible digits.
 
-Another optimisation made was to use two bitmaps rather than one. This allows the decoder to read in the next line while the current line is being processed, like what is shown in the diagram below. 
-
+Another optimisation made was to use two bitmaps rather than one. This allows the decoder to read in the next line while the current line is being processed, like what is shown in the diagram below.
 
 <p align="center">
 <img src="docs/img/day_3_double_buffer_structure.png" alt="Structure of the double buffer approach used in day 3" width="1080">
@@ -347,7 +333,6 @@ Another optimisation made was to use two bitmaps rather than one. This allows th
 This ensures that all logic in the design is being utilised as much as possible, and avoiding data stalls as much as possible.
 
 In retrospect, this design is okay, however the logic depth does get quite extensive, and could likely be improved by introducing additional stages to find the next best digit to select. If I get time before submitting, I'll try and refactor this change.
-
 
 ### Benchmarking and Evaluation
 
@@ -359,83 +344,67 @@ My day 3 solution was evaluated in a similar manner to day 1. It was similarly e
 
 As the logic to evaluate a single line takes a constant number of clock cycles, the number of clock cycles used scales approximately linearly with the number of banks (rows) in the input file.
 
-
-### Scalability 
+### Scalability
 
 Since the solver only needs to read in 1 (or 2) lines at a time, the number of banks (rows) in the input file can be arbitrarily increased without the design needing to change.
 
 To handle longer input rows (more characters per line), the `MAX_LINE_LEN` parameter in the `day03_core` module can be increased and the logic usage will grow accordingly. My puzzle input only had 100 characters per line and so this was what I tested/benchmarked with. Architecture and efficiency has been discussed above.
 
-
 ## Day 4:
 
 Writeup coming soon
-
 
 ## Day 5:
 
 Writeup coming soon
 
-
 ## Day 6:
 
 Writeup coming soon
-
 
 ## Day 7:
 
 Writeup coming soon
 
-
 ## Day 8:
 
 Currently unsolved
-
 
 ## Day 9:
 
 Writeup coming soon
 
-
 ## Day 10:
 
 Currently unsolved
-
 
 ## Day 11:
 
 Writeup coming soon
 
-
 ## Day 12:
 
 Currently unsolved
 
-
-
-
-
 # Usage Notice
+
 This project is open source under the MIT License.
 While you are legally allowed to copy and reuse the code, I kindly ask that you
 do not take credit for my work, and if you are also competing in [Advent of FPGA](https://blog.janestreet.com/advent-of-fpga-challenge-2025/),
 then please uphold the integrity of the competition, by not taking ideas from these
 works (at least until the competition submission period has passed).
 
-
 # FAQs:
 
 ### Why Verilog?
 
-I like Verilog for its combination of simplicity and fairly easy to imagine exactly what hardware circuit it might synthesize to. Other HDLs introduce useful abstractions which I definitely appreciate, but I find the comparatively manual nature of 2001 Verilog charming. 
+I like Verilog for its combination of simplicity and fairly easy to imagine exactly what hardware circuit it might synthesize to. Other HDLs introduce useful abstractions which I definitely appreciate, but I find the comparatively manual nature of 2001 Verilog charming.
 
 I also taught Verilog through a Digital Systems course at my university for four years in a row which has made me quite familiar with it.
 
-
 ### Why is your Ocaml / Hardcaml weird?
+
 I started learning Ocaml in mid-December 2025, I'm very new to the language so I'm not familiar with the idiomatic way to do things just yet (I'm open to feedback if you have any!).
-
-
 
 # Todos / Task List:
 
@@ -445,7 +414,7 @@ I started learning Ocaml in mid-December 2025, I'm very new to the language so I
 - [ ] Day 8
 
 - [ ] Check todos in completed days to resolve issues, add documentation, etc.
-- [ ] Document the hell out of the interesting days (day 2, 3, 5, 6, 9)
+- [ ] Document the hell out of the interesting days (day 5, 6, 9)
 
 - [ ] Attempt days 1-X in Hardcaml
 - [ ] Write tons of readme stuff to explain
@@ -453,4 +422,5 @@ I started learning Ocaml in mid-December 2025, I'm very new to the language so I
 - [ ] Attempt synthesis / running on DE-10 lite or DE1-SoC w/ Quartus
 
 ### Low priority / Not sure if can be bothered/possible
+
 - [ ] Move from iverilog to verilator for better simulation speed
