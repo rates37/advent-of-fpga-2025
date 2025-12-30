@@ -7,8 +7,29 @@ Some ideas for solving puzzles my come from [my attempts at solving these proble
 
 # Summary of Results
 
-<!-- todo: table of results -->
----
+The table below summarises which problems have been successfully solved, the HDL used (Verilog/Hardcaml), and the number of clock cycles used to solve my personal puzzle's input for each day.
+
+
+| Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles |   |
+|-----|--------------------------------|--------------|---|
+| 1   | Verilog                        | 19691        |   |
+| 2   | Verilog                        | 1729         |   |
+| 3   | Verilog                        | 20217        |   |
+| 4   | Verilog                        | 27943        |   |
+| 5   | Verilog                        | 35614        |   |
+| 6   | Verilog                        | 33157        |   |
+| 7   | Verilog                        | 40755        |   |
+| 8   | Not Yet                        |              |   |
+| 9   | Verilog                        | 129044       |   |
+| 10  | Not yet                        |              |   |
+| 11  | Verilog                        | 656629       |   |
+| 12  | Not yet                        |              |   |
+
+
+<!-- 
+Note: day 9 takes a LONG time to run (about 5 minutes on my Macbook Pro) the simulation since simulating the pipeline of 512 segment modules
+ -->
+
 
 # How to run:
 
