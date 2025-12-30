@@ -72,7 +72,6 @@ module day03_core #(
                 digits_valid_bitmap[0][j] <= 0;
                 digits_valid_bitmap[1][j] <= 0;
             end
-            done <= 0;
             proc_active <= 0;
         end else if (!done) begin
             // read addr logic:
@@ -167,6 +166,7 @@ module day03_core #(
             part1_result <= 0;
             p2_acc <= 0;
             part2_result <= 0;
+            done <= 0;
         end else begin
             case (state)
                 S_IDLE: begin
