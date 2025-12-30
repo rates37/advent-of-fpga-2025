@@ -14,7 +14,7 @@ The table below summarises which problems have been successfully solved, the HDL
 |-----|--------------------------------|--------------|------------------------------------------------------------|-----------------------|
 | 1   | Verilog                        | 19691        | 4780 rotations                                             |                       |
 | 2   | Verilog                        | 1729         | 38 ranges                                                  | 9028 (18%)            |
-| 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                             | 106557 (21%)          |
+| 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                             | 10657 (21%)          |
 | 4   | Verilog                        | 27943        | 137 x 137 grid                                             |                       |
 | 5   | Verilog                        | 35614        | 177 ranges, 1000 query IDs                                 |                       |
 | 6   | Verilog                        | 33157        | 4 numeric rows, 1000 operators, ~3709 chars per line       |                       |
