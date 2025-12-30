@@ -1,6 +1,7 @@
 #!/user/bin/python3
 import random
 import math
+import functools as ft
 
 DEFAULT_SEED = sum(ord(c) for c in "Advent of FPGA")
 
@@ -415,5 +416,107 @@ def gen_day05(
     return p1_ans, p2_ans
 
 
+def gen_day06(
+    n: tuple[int, int], output_filename: str, seed: int = DEFAULT_SEED
+) -> tuple[int, int]:
+    # n = number of rows, number of operators
+    # output_filename = self explanatory
+    # returns two ints: (part1_answer, part2_answer)
+    random.seed(seed)
+    n_rows, n_ops = n
+
+    problems = []
+    for _ in range(n_ops):
+        op = random.choice(["+", "*"])
+        if op == "+":
+            nums = [random.randint(1, 9999) for _ in range(n_rows)]
+        else:
+            # lower limit when taking product to reduce chances of overflow
+            nums = [random.randint(1, 120) for _ in range(n_rows)]
+        problems.append((nums, op))
+
+    # determine per-problem widths:
+    widths = [max(len(str(x)) for x in nums) for nums, _ in problems]
+    rows = [[] for _ in range(n_rows + 1)]
+    for (nums, op), w in zip(problems, widths):
+        # difficult to deduce the input format, but it seems the numbers that
+        # are a smaller width than others in the same column are randomly
+        # left / right aligned (and not floating in the middle)
+        align_left = random.choice([True, False])
+        for r, v in enumerate(nums):
+            s = str(v)
+            cell = s.ljust(w) if align_left else s.rjust(w)
+            rows[r].extend(cell)
+        rows[n_rows].extend(op + " " * (w - 1))
+
+        # add separator column:
+        for i in range(n_rows + 1):
+            rows[i].append(" ")
+
+    lines = ["".join(r).rstrip() for r in rows]
+
+    # write to output file:
+    with open(output_filename, "w") as f:
+        f.write("\n".join(lines))
+
+    # solver logic, based on my solution in https://github.com/rates37/aoc-2025/blob/main/day06/day06.hs
+    def to_op(c: str):
+        if c == "*":
+            return lambda a, b: a * b
+        else:
+            return lambda a, b: a + b
+
+    def part1(lines):
+        num_lines = lines[:-1]
+        op_line = lines[-1]
+
+        nums = [list(map(int, l.split())) for l in num_lines]
+        ops = [to_op(c) for c in op_line.split()]
+
+        output = 0
+        for col_val, op in zip(zip(*nums), ops):
+            output += ft.reduce(op, col_val)
+        return output
+
+    def split_on_empty(cols):
+        blocks = []
+        current_block = []
+        for c in cols:
+            if c.isspace():
+                if current_block:
+                    blocks.append(current_block)
+                    current_block = []
+            else:
+                current_block.append(c)
+        if current_block:
+            blocks.append(current_block)
+        return blocks
+
+    def parse_col_number(col):
+        digits = "".join(c for c in col if c.isdigit())
+        return int(digits) if digits else None
+
+    def process_part2_block(cols):
+        block_str = "".join(cols)
+        operator_char = "+"
+        for ch in block_str:
+            if ch in "+*":
+                operator_char = ch
+                break
+        op = to_op(operator_char)
+        nums = [parse_col_number(c) for c in cols if parse_col_number(c) is not None]
+        return ft.reduce(op, nums) if nums else 0
+
+    def part2(lines):
+        max_len = max(len(line) for line in lines)
+        padded_lines = [line.ljust(max_len) for line in lines]
+
+        cols = ["".join(c) for c in zip(*padded_lines)]
+        blocks = split_on_empty(cols)
+        return sum(process_part2_block(b) for b in blocks)
+
+    return part1(lines), part2(lines)
+
+
 if __name__ == "__main__":
-    print(gen_day05([20, 20], "day05-20-100.txt"))
+    print(gen_day06((4, 1000), "day06-4-1000.txt", 42))

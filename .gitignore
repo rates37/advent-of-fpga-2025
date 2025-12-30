@@ -266,3 +266,6 @@ __marimo__/
 # I will add -f the key files at a later time
 **/benchmarks/*.csv
 **/benchmarks/*.png
+
+# draw io temp file:
+*.dtmp
