@@ -1,0 +1,4 @@
+(executable
+ (public_name advent_of_hardcaml)
+ (name main)
+ (libraries advent_of_hardcaml))

@@ -1,0 +1,3 @@
+(executable
+ (name day01)
+ (libraries hardcaml hardcaml_waveterm base stdio))
