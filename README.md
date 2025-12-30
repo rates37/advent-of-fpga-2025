@@ -7,23 +7,23 @@ Some ideas for solving puzzles my come from [my attempts at solving these proble
 
 # Summary of Results
 
-The table below summarises which problems have been successfully solved, the HDL used (Verilog/Hardcaml), and the number of clock cycles used to solve my personal puzzle's input for each day.
+The table below summarises which problems have been successfully solved, the HDL used (Verilog/Hardcaml), and the number of clock cycles used to solve my personal puzzle's input for each day. The 'size' of each puzzle's input has been noted for each day (using my personal puzzle input file). The discussions below often test with various size inputs, not just my personal puzzle inputs. As per [the advent of code rules](https://adventofcode.com/2025/about#faq_copying), sharing of actual inputs is not permitted, so feel free to provide your own input text files (these should be formatted in the exact same format as the Advent of Code site provides). However, in my own investigation and benchmarking of my designs, I wrote my own scripts to generate sample inputs of varying sizes. These functions can be found in [`generate_input.py`](/verilog/scripts/generate_input.py).
 
 
-| Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles |   |
-|-----|--------------------------------|--------------|---|
-| 1   | Verilog                        | 19691        |   |
-| 2   | Verilog                        | 1729         |   |
-| 3   | Verilog                        | 20217        |   |
-| 4   | Verilog                        | 27943        |   |
-| 5   | Verilog                        | 35614        |   |
-| 6   | Verilog                        | 33157        |   |
-| 7   | Verilog                        | 40755        |   |
-| 8   | Not Yet                        |              |   |
-| 9   | Verilog                        | 129044       |   |
-| 10  | Not yet                        |              |   |
-| 11  | Verilog                        | 656629       |   |
-| 12  | Not yet                        |              |   |
+| Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                                 | Logic Element Usage   |
+|-----|--------------------------------|--------------|------------------------------------------------------------|-----------------------|
+| 1   | Verilog                        | 19691        | 4780 rotations                                             |                       |
+| 2   | Verilog                        | 1729         | 38 ranges                                                  | 9028 (18%)            |
+| 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                             | 106557 (21%)          |
+| 4   | Verilog                        | 27943        | 137 x 137 grid                                             |                       |
+| 5   | Verilog                        | 35614        | 177 ranges, 1000 query IDs                                 |                       |
+| 6   | Verilog                        | 33157        | 4 numeric rows, 1000 operators, ~3709 chars per line       |                       |
+| 7   | Verilog                        | 40755        | 142 x 142 grid                                             |                       |
+| 8   | Not Yet                        |              |                                                            |                       |
+| 9   | Verilog                        | 129044       | 496 coordinates                                            |                       |
+| 10  | Not yet                        |              |                                                            |                       |
+| 11  | Verilog                        | 656629       | 583 device names                                           |                       |
+| 12  | Not yet                        |              |                                                            |                       |
 
 
 <!-- 
@@ -62,8 +62,6 @@ Part 2 Result: 4174379265
 Took 561 clock cycles
 day02_tb.v:90: $finish called at 5705000 (1ps)
 ```
-
-As per [the advent of code rules](https://adventofcode.com/2025/about#faq_copying), sharing of actual inputs is not permitted, so feel free to provide your own input text files (these should be formatted in the exact same format as the Advent of Code site provides). However, in my own investigation and benchmarking of my designs, I wrote my own scripts to generate sample inputs of varying sizes. These functions can be found in ['generate_input.py'](/verilog/scripts/generate_input.py).
 
 
 # Design Approaches / Discussion
@@ -259,9 +257,114 @@ The `period_summer` module takes 5 clock cycles to evaluate a consistent range, 
 
 There is a possibility for improvement by adding additional `period_summer` submodules to the `range_summer` module, to allow multiple ranges to be processed in parallel. However, given that input is read character-by-character, it is likely that the decoder/parsing stage will quickly become the computation bottleneck. In an effort to save on resource usage, I decided not to add a secondary range summer in my solution, and I decided the module was "efficient enough" and moved on with other days.
 
+### Quartus Synthesis Results
+
+
+
+
 ## Day 3:
 
-Writeup coming soon
+### Approach Description:
+Day three's problem was about selecting batteries from battery banks to achieve a maximum joltage. This puzzle is essentially a task to find the largest increasing subsequences for each row of the input of length 2 (for part 1) and length 12 (for part 2).
+
+A naive approach to solving this (and [the approach I took when initially solving this problem in C++](https://github.com/rates37/aoc-2025/blob/main/day03/day03.cpp)) is to take each row and iterate over it two/twelve times to find the largest increasing subsequence of length 2/12, greedily selecting the largest character found in a given range. Brief pseudocode for this approach is shown below:
+
+```
+func get_largest_inc_subseq(s: string, n: integer):
+    position <- 1
+    total <- 0
+
+    for k in [0 .. n-1]:
+        bestChar <- s[pos + 1]
+        bestPos <- pos + 1
+
+        // ensure enough characters remain for next loop iteration
+        lastIdx <- length(s) - (n-k)
+
+        // scan:
+        for i in [pos+1 .. lastIdx]:
+            if s[i] > bestChar:
+                bestChar <- s[i]
+                bestPos <- i
+        
+        // add largest character to total and update position:
+        total <- total * 10 + int(bestChar)
+        pos <- bestPos
+    return total
+```
+
+However, this approach can be quite inefficient, particularly for long lines, since we are iterating over the same string of characters multiple times. Instead, we can use additional memory to track positions of all seen digits. In pseudocode, this might look like the following:
+
+```
+func get_largest_inc_subseq(s: string, n: integer):
+    // list of positions where digit d appears:
+    posList <- array[10][]
+
+    // single scan to build position lists:
+    for i in [1 .. length(s)]:
+        d <- int(s[i])
+        posList[d].append(i)
+    
+    // build output:
+    pos <- 0
+    total <- 0
+
+    for k in [0 .. n-1]:
+        lastIdx <- length(s) - (n-k)
+
+        for d in [9 .. 0]:
+            for p in posList[d]:
+                if p > pos and p <= lastIdx:
+                    total <- total * 10 + d
+                    pos <- p
+                    go to next iteration of outer loop
+    return total
+```
+
+This approach sacrifices additional memory to save on the work of scanning the input string multiple times. However in software, this equates to the same amount (if not more) as the original approach. 
+
+### Implementation in hardware
+
+Rather than using lists, in hardware, we can use bitmaps and combinational logic to find the next digit to select each iteration much faster.
+
+My approach makes use of 10 position bitmaps to store the input row, where:
+
+* `bitmap[9]` contains a `1` at every index where the digit is a 9
+* `bitmap[8]` contains a `1` at every index where the digit is a 8
+* ...
+
+For each bitmap from 9 to 0, we can apply a mask to only consider the valid range. If the masked bitmap is not zero, we immediately know that the current digit is the best digit and we don't need to check smaller digits. A priority encoder can then be used to find the first set bit index, so we know how to update the current pos.
+
+This effectively turns a search over a string (may have arbitrary length) into a search over a fixed size 10 possible digits.
+
+Another optimisation made was to use two bitmaps rather than one. This allows the decoder to read in the next line while the current line is being processed, like what is shown in the diagram below. 
+
+
+<p align="center">
+<img src="docs/img/day_3_double_buffer_structure.png" alt="Structure of the double buffer approach used in day 3" width="1080">
+</p>
+
+This ensures that all logic in the design is being utilised as much as possible, and avoiding data stalls as much as possible.
+
+In retrospect, this design is okay, however the logic depth does get quite extensive, and could likely be improved by introducing additional stages to find the next best digit to select. If I get time before submitting, I'll try and refactor this change.
+
+
+### Benchmarking and Evaluation
+
+My day 3 solution was evaluated in a similar manner to day 1. It was similarly evaluated over an average/stdev of 5 runs. Tested with varying the number of input ranges, and those ranges can span the range of 64 bit integers. My puzzle input had 37 ranges to evaluate. The plot below evaluates number of ranges between 10 and 1000 (significantly larger than the real puzzle input).
+
+<p align="center">
+<img src="verilog/scripts/benchmarks/day03_benchmark_20251230_151221.png" alt="Plot of clock cycles vs input size" width="720">
+</p>
+
+As the logic to evaluate a single line takes a constant number of clock cycles, the number of clock cycles used scales approximately linearly with the number of banks (rows) in the input file.
+
+
+### Scalability 
+
+Since the solver only needs to read in 1 (or 2) lines at a time, the number of banks (rows) in the input file can be arbitrarily increased without the design needing to change.
+
+To handle longer input rows (more characters per line), the `MAX_LINE_LEN` parameter in the `day03_core` module can be increased and the logic usage will grow accordingly. My puzzle input only had 100 characters per line and so this was what I tested/benchmarked with. Architecture and efficiency has been discussed above.
 
 
 ## Day 4:

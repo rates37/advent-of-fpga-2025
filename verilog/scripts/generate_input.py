@@ -248,7 +248,7 @@ def gen_day03(
     p2_ans = 0
 
     for _ in range(n):
-        bank_length = random.randint(12, 60)
+        bank_length = random.randint(12, 100)
         bank = "".join(random.choice("123456789") for _ in range(bank_length))
         banks.append(bank)
         p1_ans += get_bank_joltage_n(bank, 2)
