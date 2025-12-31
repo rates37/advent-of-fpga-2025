@@ -18,11 +18,13 @@ The table below summarises which problems have been successfully solved, the HDL
 | 5   | Verilog                        | 35614        | 177 ranges, 1000 query IDs                           |                     |
 | 6   | Verilog                        | 33157        | 4 numeric rows, 1000 operators, ~3709 chars per line |                     |
 | 7   | Verilog                        | 40755        | 142 x 142 grid                                       |                     |
-| 8   | Not Yet                        |              |                                                      |                     |
+| 8   | Verilog                        | 3342930*     | 1000 x,y,z coordinates                               |                     |
 | 9   | Verilog                        | 129044       | 496 coordinates                                      |                     |
 | 10  | Not yet                        |              |                                                      |                     |
 | 11  | Verilog                        | 656629       | 583 device names                                     |                     |
 | 12  | Not yet                        |              |                                                      |                     |
+
+\* Day 8's solution not guaranteed to produce correct results. However it is overwhelmingly likely to produce correct results on typical puzzle inputs. Refer to the day 8 section below for details.
 
 <!--
 Note: day 9 takes a LONG time to run (about 5 minutes on my Macbook Pro) the simulation since simulating the pipeline of 512 segment modules

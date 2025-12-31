@@ -3,6 +3,7 @@ VVP := vvp
 
 SRCS := day08_tb.v \
 		day08_core.v \
+		bitonic_sort.v \
 		../utils/rom.v \
 		../utils/ram.v 
 
@@ -23,7 +24,7 @@ IVERILOG_PARAMS := -Pday08_tb.INPUT_DATA_FILENAME=\"$(INPUT_FILE)\"
 all: $(OUT)
 
 $(OUT): $(SRCS)
-	$(IVERILOG) -o $(OUT) $(IVERILOG_PARAMS) $(SRCS)
+	$(IVERILOG) -g2005-sv -o $(OUT) $(IVERILOG_PARAMS) $(SRCS)
 
 .PHONY: $(OUT) # force re-building so that you can change the filename without needing to `make clean` first
 #                otherwise nothing to be done
