@@ -19,10 +19,10 @@ module ram #(
 
     // read port:
     input wire [ADDR_BITS-1:0] r_addr,
-    output reg [WIDTH-1] r_data
+    output reg [WIDTH-1:0] r_data
 );
     // memory: (use vendor-specific primitives to ensure BRAM, or just replace this module entirely with vendor-specific IP)
-    reg [WIDTH-1] memory [0:DEPTH-1];
+    reg [WIDTH-1:0] memory [0:DEPTH-1];
 
     always @(posedge clk) begin
         // write
@@ -38,7 +38,7 @@ endmodule
 
 
 module ram_dp #(
-    parameter WIDTH = 8, // data width in # bits
+    parameter WIDTH = 64, // data width in # bits
     parameter DEPTH = 2048, // number of entries to store
     parameter ADDR_BITS = 11 // address bits (must be >= log2(DEPTH))
 ) (
@@ -110,7 +110,7 @@ module ram_dp_init #(
     output reg init_done
 );
     reg [WIDTH-1:0] memory [0:DEPTH-1];
-    reg [ADDR_BITS-1:0] init_idx;
+    reg [ADDR_BITS:0] init_idx;
 
     always @(posedge clk) begin
         if (rst) begin
