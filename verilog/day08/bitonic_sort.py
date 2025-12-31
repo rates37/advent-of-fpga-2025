@@ -1,7 +1,8 @@
 import random
 import sys
 
-#reference bitonic sort implementation used for verilog implementation
+# reference bitonic sort implementation used for verilog implementation
+
 
 def bitonic_sort(lst: list) -> list:
     n = len(lst)
@@ -11,24 +12,23 @@ def bitonic_sort(lst: list) -> list:
     while n_padded < n:
         n_padded <<= 1
     l_padded = lst[:]
-    l_padded.extend(([sys.maxsize] * (n_padded-n)))
-    
-    print(f"Inptu size: {n}, Padded size: {len(l_padded)}")
+    l_padded.extend(([sys.maxsize] * (n_padded - n)))
 
+    print(f"Inptu size: {n}, Padded size: {len(l_padded)}")
 
     k = 2
     while k <= n_padded:
-        j = k//2
+        j = k // 2
 
         while j > 0:
             for i in range(n_padded):
-                l = i^j
+                l = i ^ j
 
                 if l > i:
                     val_i = l_padded[i]
                     val_l = l_padded[l]
 
-                    ascending = ((i&k) == 0)
+                    ascending = (i & k) == 0
                     should_swap = False
                     if ascending:
                         if val_i > val_l:
@@ -43,6 +43,7 @@ def bitonic_sort(lst: list) -> list:
         k *= 2
 
     return l_padded[:n]
+
 
 if __name__ == "__main__":
     random.seed(69420)
