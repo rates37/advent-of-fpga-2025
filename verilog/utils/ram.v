@@ -7,7 +7,7 @@
 module ram #(
     parameter WIDTH = 8, // data width in # bits
     parameter DEPTH = 2048, // number of entries to store
-    parameter ADDR_BITS = 11, // address bits (must be >= log2(DEPTH))
+    parameter ADDR_BITS = 11 // address bits (must be >= log2(DEPTH))
 ) (
     input wire clk,
     input wire rst,
@@ -40,7 +40,7 @@ endmodule
 module ram_dp #(
     parameter WIDTH = 8, // data width in # bits
     parameter DEPTH = 2048, // number of entries to store
-    parameter ADDR_BITS = 11, // address bits (must be >= log2(DEPTH))
+    parameter ADDR_BITS = 11 // address bits (must be >= log2(DEPTH))
 ) (
     input wire clk,
     input wire rst,
@@ -49,13 +49,13 @@ module ram_dp #(
     input wire we_a,
     input wire [ADDR_BITS-1:0] addr_a,
     input wire [WIDTH-1:0] w_data_a,
-    input wire [WIDTH-1:0] r_data_a,
+    output reg [WIDTH-1:0] r_data_a,
 
     // port b:
     input wire we_b,
     input wire [ADDR_BITS-1:0] addr_b,
     input wire [WIDTH-1:0] w_data_b,
-    input wire [WIDTH-1:0] r_data_b
+    output reg [WIDTH-1:0] r_data_b
 );
     // memory:
     reg [WIDTH-1:0] memory [0:DEPTH-1];
@@ -98,13 +98,13 @@ module ram_dp_init #(
     input wire we_a,
     input wire [ADDR_BITS-1:0] addr_a,
     input wire [WIDTH-1:0] w_data_a,
-    input wire [WIDTH-1:0] r_data_a,
+    output reg [WIDTH-1:0] r_data_a,
 
     // port b:
     input wire we_b,
     input wire [ADDR_BITS-1:0] addr_b,
     input wire [WIDTH-1:0] w_data_b,
-    input wire [WIDTH-1:0] r_data_b,
+    output reg [WIDTH-1:0] r_data_b,
 
     // signal to show if finished initialisation
     output reg init_done
