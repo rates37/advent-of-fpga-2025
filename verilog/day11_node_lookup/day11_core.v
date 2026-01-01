@@ -725,7 +725,7 @@ module path_counter #(
     input wire [NODE_BITS-1:0] gm_edge_to
 );
 
-    // stack storage:
+    // stack storage: (left as registers for now)
     localparam MAX_STACK_DEPTH = 64;
     reg [NODE_BITS-1:0] stk_node [0:MAX_STACK_DEPTH-1];
     reg [EDGE_BITS-1:0] stk_edge_start [0:MAX_STACK_DEPTH-1];
@@ -734,19 +734,38 @@ module path_counter #(
     reg [63:0] stk_sum [0:MAX_STACK_DEPTH-1];
     reg [6:0] sp;
 
-    // memoization: // todo: move this to an external ram module
-    reg [63:0] memo [0:1023];
-    reg [1023:0] memo_v; // valid bit tags to avoid clearing memo array between 'calls' to this 'function'
+    // memo ram signals:
+    reg memo_we;
+    reg [NODE_BITS-1:0] memo_w_addr;
+    reg [63:0] memo_w_data;
+    reg [NODE_BITS-1:0] memo_r_addr;
+    wire [63:0] memo_r_data;
+    reg [1023:0] memo_v;
 
-    // FSM:
-    localparam S_IDLE = 0; // reuse S_IDLE as done state since start input required to trigger new computation from idle
+    ram #(
+        .WIDTH(64),
+        .DEPTH(1024),
+        .ADDR_BITS(NODE_BITS)
+    ) u_memo_ram_0 (
+        .clk(clk),
+        .rst(rst),
+        .we(memo_we),
+        .w_addr(memo_w_addr),
+        .w_data(memo_w_data),
+        .r_addr(memo_r_addr),
+        .r_data(memo_r_data)
+    );
+
+    localparam S_IDLE = 0;
     localparam S_START_NODE = 1;
-    localparam S_FETCH_HEAD = 2;
-    localparam S_FETCH_HEAD_2 = 3;
-    localparam S_ITERATE = 4;
-    localparam S_FETCH_EDGE = 5;
-    localparam S_PROCESS_EDGE = 6;
-    reg [2:0] state;
+    localparam S_MEMO_WAIT = 2;
+    localparam S_MEMO_READ = 3;
+    localparam S_HEAD_ISSUE = 4;
+    localparam S_HEAD_WAIT = 5;
+    localparam S_ITERATE = 6;
+    localparam S_EDGE_WAIT = 7;
+    localparam S_PROCESS_EDGE = 8;
+    reg [3:0] state;
     reg [NODE_BITS-1:0] curr_u;
 
     always @(posedge clk) begin
@@ -754,7 +773,10 @@ module path_counter #(
             state <= S_IDLE;
             done <= 0;
             memo_v <= 0;
+            memo_we <= 0;
         end else begin
+            memo_we <= 0;
+
             case (state)
                 S_IDLE: begin
                     done <= 0;
@@ -767,11 +789,11 @@ module path_counter #(
                     end
                 end
 
+
                 S_START_NODE: begin
                     curr_u = stk_node[sp];
-
                     if (curr_u == dst_node) begin
-                        // reached end:
+                        // found the target:
                         if (sp == 0) begin
                             count_out <= 1;
                             done <= 1;
@@ -779,71 +801,84 @@ module path_counter #(
                         end else begin
                             stk_sum[sp-1] <= stk_sum[sp-1] + 1;
                             sp <= sp-1;
-                            // go back to caller (parent node)
                             state <= S_ITERATE;
                         end
                     end else if (memo_v[curr_u]) begin
-                        if (sp == 0) begin
-                            count_out <= memo[curr_u];
-                            done <= 1;
-                            state <= S_IDLE;
-                        end else begin
-                            stk_sum[sp-1] <= stk_sum[sp-1] + memo[curr_u];
-                            sp <= sp-1;
-                            // go back to caller (parent node)
-                            state <= S_ITERATE;
-                        end
+                        // subproblem already solved
+                        memo_r_addr <= curr_u;
+                        state <= S_MEMO_WAIT;
                     end else begin
-                        state <= S_FETCH_HEAD;
+                        // need to solve children:
                         gm_read_node_addr <= curr_u;
+                        state <= S_HEAD_ISSUE;
+                    end 
+                end
+
+
+                S_MEMO_WAIT: begin
+                    state <= S_MEMO_READ;
+                end
+
+
+                S_MEMO_READ: begin
+                    if (sp == 0) begin
+                        count_out <= memo_r_data;
+                        done <= 1;
+                        state <= S_IDLE;
+                    end else begin
+                        stk_sum[sp-1] <= stk_sum[sp-1] + memo_r_data;
+                        sp <= sp-1;
+                        state <= S_ITERATE;
                     end
                 end
 
-                S_FETCH_HEAD: begin
-                    state <= S_FETCH_HEAD_2; // wait for a cycle to let graph manager respond
+
+                S_HEAD_ISSUE: begin
+                    state <= S_HEAD_WAIT;
                 end
 
-                S_FETCH_HEAD_2: begin
-                    stk_edge_count[sp] <= gm_head_count;
-                    stk_edge_start[sp] <= gm_head_start;
-                    stk_edge_idx[sp] <= 0;
 
-                    // loop over adjacent nodes:
+                S_HEAD_WAIT: begin
+                    stk_edge_start[sp] <= gm_head_start;
+                    stk_edge_count[sp] <= gm_head_count;
+                    stk_edge_idx[sp] <= 0;
                     state <= S_ITERATE;
                 end
 
 
                 S_ITERATE: begin
-                    // check if done:
                     if (stk_edge_idx[sp] == stk_edge_count[sp]) begin
-                        // iterated over all outgoing edges
-                        // store result:
-                        memo[stk_node[sp]] <= stk_sum[sp];
+                        // all edges processed -> write to memo
+                        memo_we <= 1;
+                        memo_w_addr <= stk_node[sp];
+                        memo_w_data <= stk_sum[sp];
                         memo_v[stk_node[sp]] <= 1;
+
                         if (sp == 0) begin
                             count_out <= stk_sum[sp];
                             done <= 1;
                             state <= S_IDLE;
                         end else begin
                             stk_sum[sp-1] <= stk_sum[sp-1] + stk_sum[sp];
-                            sp <= sp - 1;
+                            sp <= sp-1;
                             state <= S_ITERATE;
                         end
                     end else begin
-                        // continue iterating over edges:
+                        // process next edge/child:
                         gm_read_edge_addr <= stk_edge_start[sp] + stk_edge_idx[sp];
                         stk_edge_idx[sp] <= stk_edge_idx[sp] + 1;
-                        state <= S_FETCH_EDGE;
+                        state <= S_EDGE_WAIT;
                     end
                 end
 
 
-                S_FETCH_EDGE: begin
+                S_EDGE_WAIT: begin
                     state <= S_PROCESS_EDGE;
                 end
 
 
                 S_PROCESS_EDGE: begin
+                    // push child onto stack:
                     sp <= sp + 1;
                     stk_node[sp+1] <= gm_edge_to;
                     stk_sum[sp+1] <= 0;
@@ -852,6 +887,5 @@ module path_counter #(
             endcase
         end
     end
-
 
 endmodule
