@@ -69,6 +69,7 @@ module day11_core #(
     localparam S_P1_SETUP = 1;
     localparam S_P1_START = 2;
     localparam S_P1_WAIT = 3;
+
     localparam S_P2A_1_SETUP = 4;
     localparam S_P2A_1_START = 5;
     localparam S_P2A_1_WAIT = 6;
@@ -417,7 +418,7 @@ module day11_core #(
 
 
                 S_DONE: begin
-                    // pass
+                    done <= 1;
                 end
 
 
@@ -444,46 +445,101 @@ module name_resolver #(
     output reg init_done
 );
 
-    // simple linear store for now
-    // TODO: turn into tree-based lookup?
-    reg [LOG2_MAX_NODES-1:0] hash_table [0:17575]; // 26^3 = 17576
-    reg [14:0] hash_addr;
-    reg [LOG2_MAX_NODES-1:0] node_count;
-    reg [23:0] name_latched;
+    localparam HASH_DEPTH = 17576; // 26^3
+    localparam HASH_ADDR_BITS = 15;
+    // ram to store lookup for each node name:
+    reg hash_we;
+    reg [HASH_ADDR_BITS-1:0] hash_w_addr;
+    reg [9:0] hash_w_data;
+    reg [HASH_ADDR_BITS-1:0] hash_r_addr;
+    wire [9:0] hash_r_data;
+
+    ram #(
+        .WIDTH(10),
+        .DEPTH(HASH_DEPTH),
+        .ADDR_BITS(HASH_ADDR_BITS)
+    ) u_ram_hash_0(
+        .clk(clk),
+        .rst(rst),
+        .we(hash_we),
+        .w_addr(hash_w_addr),
+        .w_data(hash_w_data),
+        .r_addr(hash_r_addr),
+        .r_data(hash_r_data)
+    );
+
+    // states:
+    localparam S_INIT = 0;
+    localparam S_IDLE = 1;
+    localparam S_COMPUTE = 2;
+    localparam S_READ_WAIT = 3;
+    localparam S_CHECK = 4;
+    reg [2:0] state;
+
     reg [14:0] init_idx;
-    reg valid_latch;
-    integer i;
+    reg [9:0] node_count;
+    reg [HASH_ADDR_BITS-1:0] current_hash;
 
     always @(posedge clk) begin
         if (rst) begin
+            state <= S_INIT;
+            init_idx <= 0;
+            init_done <= 0;
             node_count <= 0;
             done <= 0;
-            valid_latch <= 0;
-            init_done <= 0;
-            init_idx <= 0;
-        end else if (!init_done) begin
-            hash_table[init_idx] <= (MAX_NODES-1);
-            init_idx <= init_idx + 1;
-            if (init_idx == 17575) begin
-                init_done <= 1;
-            end  
-        end else begin
+            hash_we <= 0;
+        end 
+        else begin
             done <= 0;
-            if (valid_in) begin
-                hash_addr <= (name_in[23:16] - "a")*676 + (name_in[15:8]-"a")*26 + (name_in[7:0]-"a");
-                valid_latch <= 1;
-            end else if (valid_latch) begin
-                valid_latch <= 0;
-                if (hash_table[hash_addr] == (MAX_NODES-1)) begin
-                    hash_table[hash_addr] <= node_count;
-                    node_id_out <= node_count;
-                    node_count <= node_count + 1;
-                    done <= 1;
-                end else begin
-                    node_id_out <= hash_table[hash_addr];
-                    done <= 1;
+            hash_we <= 0;
+
+            case (state)
+                S_INIT: begin
+                    hash_we <= 1;
+                    hash_w_addr <= init_idx[HASH_ADDR_BITS-1:0];
+                    hash_w_data <= 1023;
+                    init_idx <= init_idx + 1;
+                    if (init_idx == HASH_DEPTH - 1) begin
+                        init_done <= 1;
+                        state <= S_IDLE;
+                    end
                 end
-            end
+
+                S_IDLE: begin
+                    if (valid_in) begin
+                        current_hash <= (name_in[23:16] - 8'd97) * 676 + (name_in[15:8] - 8'd97) * 26 + (name_in[7:0] - 8'd97);
+                        state <= S_COMPUTE;
+                    end
+                end
+
+
+                S_COMPUTE: begin
+                    hash_r_addr <= current_hash;
+                    state <= S_READ_WAIT;
+                end
+
+                S_READ_WAIT: begin
+                    state <= S_CHECK;
+                end
+
+
+                S_CHECK: begin
+                    if (hash_r_data == 1023) begin
+                        hash_we <= 1;
+                        hash_w_addr <= current_hash;
+                        hash_w_data <= node_count;
+
+                        node_id_out <= node_count;
+                        node_count <= node_count + 1;
+                        done <= 1;
+                    end else begin
+                        node_id_out <= hash_r_data;
+                        done <= 1;
+                    end
+                    state <= S_IDLE;
+                end
+
+            endcase
         end
     end
 
