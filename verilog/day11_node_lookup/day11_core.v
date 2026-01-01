@@ -560,48 +560,146 @@ module graph_manager #(
     input wire [NODE_BITS-1:0] dst_node,
 
     input wire [NODE_BITS-1:0] read_node_addr,
-    output reg [EDGE_BITS-1:0] head_start_out,
-    output reg [4:0] head_count_out, // number of outgoing edges from the node (hardcoded to max 32) // todo maybe fix this
+    output wire [EDGE_BITS-1:0] head_start_out,
+    output wire [4:0] head_count_out, // number of outgoing edges from the node (hardcoded to max 32) // todo maybe fix this
 
     input wire [EDGE_BITS-1:0] read_edge_addr,
-    output reg [NODE_BITS-1:0] edge_to_out,
+    output wire [NODE_BITS-1:0] edge_to_out,
     output reg init_done
 );
 
-    // using a CSR-like approach to store nodes (uses less memory overhead than linked list approach)
-    reg [EDGE_BITS-1:0] heads [0:MAX_NODES-1];
-    reg [4:0] counts [0:MAX_NODES-1];
-    reg [NODE_BITS-1:0] edge_store [0:MAX_EDGES-1];
+    localparam NODE_INFO_WIDTH = EDGE_BITS + 5;
 
-    reg [EDGE_BITS-1:0] edge_count;
+    // node info ram:
+    reg node_we;
+    reg [NODE_BITS-1:0] node_w_addr;
+    reg [NODE_INFO_WIDTH-1:0] node_w_data;
+    wire [NODE_INFO_WIDTH-1:0] node_r_data;
+
+    // edge ram signals:
+    reg edge_we;
+    reg [EDGE_BITS-1:0] edge_w_addr;
+    reg [NODE_BITS-1:0] edge_w_data;
+    wire [NODE_BITS-1:0] edge_r_data;
+
+    // multiplex read address: 
+    reg [NODE_BITS-1:0] node_r_addr_mux;
+
+    ram #(
+        .WIDTH(NODE_INFO_WIDTH),
+        .DEPTH(MAX_NODES),
+        .ADDR_BITS(NODE_BITS)
+    ) u_node_ram_0 (
+        .clk(clk),
+        .rst(rst),
+        .we(node_we),
+        .w_addr(node_w_addr),
+        .w_data(node_w_data),
+        .r_addr(node_r_addr_mux),
+        .r_data(node_r_data)
+    );
+
+    ram #(
+        .WIDTH(NODE_BITS),
+        .DEPTH(MAX_EDGES),
+        .ADDR_BITS(EDGE_BITS)
+    ) u_edge_ram_0 (
+        .clk(clk),
+        .rst(rst),
+        .we(edge_we),
+        .w_addr(edge_w_addr),
+        .w_data(edge_w_data),
+        .r_addr(read_edge_addr),
+        .r_data(edge_r_data)
+    );
+
+    assign head_start_out = node_r_data[NODE_INFO_WIDTH-1:5];
+    assign head_count_out = node_r_data[4:0];
+    assign edge_to_out = edge_r_data;
+
+    // FSM:
+    localparam S_INIT = 0;
+    localparam S_IDLE = 1;
+    localparam S_READ_NODE = 2;
+    localparam S_WRITE_NODE = 3;
+    reg [1:0] state;
+
     reg [NODE_BITS:0] init_idx;
+    reg [EDGE_BITS-1:0] edge_count;
+    reg [NODE_BITS-1:0] pending_src;
+    reg [NODE_BITS-1:0] pending_dst;
 
-    always @(posedge clk) begin
-        head_start_out <= heads[read_node_addr];
-        head_count_out <= counts[read_node_addr];
-        edge_to_out <= edge_store[read_edge_addr];
-
-        if (rst) begin
-            edge_count <= 0;
-            init_idx <= 0;
-            init_done <= 0;
-        end else if (!init_done) begin
-            // iteratively clear this here, because the rest of the solver takes so **** long to run, that 1024 cycles is comparatively negligible and it's better to save on logic resources / registers
-            heads[init_idx] <= 0;
-            counts[init_idx] <= 0;
-            init_idx <= init_idx + 1;
-            if (init_idx == MAX_NODES-1) begin
-                init_done <= 1;
-            end
+    // mux the node ram addr:
+    always @(*) begin
+        if (state == S_READ_NODE || state == S_WRITE_NODE) begin
+            node_r_addr_mux = pending_src;
         end else if (add_edge_en) begin
-            if (counts[src_node] == 0) begin
-                heads[src_node] <= edge_count;
-            end
-            edge_store[edge_count] <= dst_node;
-            counts[src_node] <= counts[src_node] + 1;
-            edge_count <= edge_count + 1;
+            node_r_addr_mux = src_node;
+        end else begin
+            node_r_addr_mux = read_node_addr;
         end
     end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            state <= S_INIT;
+            init_idx <= 0;
+            init_done <= 0;
+            edge_count <= 0;
+            node_we <= 0;
+            edge_we <= 0;
+        end else begin
+            node_we <= 0;
+            edge_we <= 0;
+
+            case (state)
+                S_INIT: begin
+                    node_we <= 1;
+                    node_w_addr <= init_idx[NODE_BITS-1:0];
+                    node_w_data <= 0;
+
+                    init_idx <= init_idx + 1;
+                    if (init_idx == MAX_NODES - 1) begin
+                        init_done <= 1;
+                        state <= S_IDLE;
+                    end
+                end
+
+
+                S_IDLE: begin
+                    if (add_edge_en) begin
+                        pending_src <= src_node;
+                        pending_dst <= dst_node;
+                        state <= S_READ_NODE;
+                    end
+                end
+
+
+                S_READ_NODE: begin
+                    state <= S_WRITE_NODE;
+                end
+
+
+                S_WRITE_NODE: begin
+                    if (node_r_data[4:0] == 0) begin
+                        node_w_data <= {edge_count, 5'd1};
+                    end else begin
+                        node_w_data <= {node_r_data[NODE_INFO_WIDTH-1:5], node_r_data[4:0] + 5'd1};
+                    end
+
+                    node_we <= 1;
+                    node_w_addr <= pending_src;
+
+                    edge_we <= 1;
+                    edge_w_addr <= edge_count;
+                    edge_w_data <= pending_dst;
+                    edge_count <= edge_count + 1;
+                    state <= S_IDLE;
+                end
+            endcase
+        end
+    end
+
 
 endmodule
 
