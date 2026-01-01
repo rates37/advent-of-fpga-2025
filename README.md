@@ -418,7 +418,6 @@ Hardcaml - to learn something new!
 
 # Todos / Task List:
 
-- [ ] Finish day 11 in Verilog
 - [ ] Finish day 12 in Verilog
 - [ ] Day 10 in Verilog
 
