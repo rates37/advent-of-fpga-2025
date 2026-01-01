@@ -1,3 +1,13 @@
-(executable
+(library
  (name day01)
- (libraries hardcaml hardcaml_waveterm base stdio))
+ (modules decoder_fsm solver day01_core)
+ (libraries hardcaml utils)
+ (preprocess
+  (pps ppx_hardcaml ppx_jane)))
+
+(executable
+ (name day01_tb)
+ (modules day01_tb)
+ (libraries day01 hardcaml hardcaml_waveterm base utils stdio)
+ (preprocess
+  (pps ppx_hardcaml ppx_jane)))

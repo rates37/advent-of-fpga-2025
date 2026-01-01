@@ -408,21 +408,24 @@ I also taught Verilog through a Digital Systems course at my university for four
 
 I started learning Ocaml in mid-December 2025, I'm very new to the language so I'm not familiar with the idiomatic way to do things just yet (I'm open to feedback if you have any!).
 
+### Why do both Hardcaml and Verilog?
+
+Verilog - for fun
+
+Hardcaml - to learn something new!
+
+
+
 # Todos / Task List:
 
-- [ ] Finish day 11
-- [ ] Finish day 12
-- [ ] Day 10
-- [ ] Day 8
+- [ ] Finish day 11 in Verilog
+- [ ] Finish day 12 in Verilog
+- [ ] Day 10 in Verilog
 
 - [ ] Check todos in completed days to resolve issues, add documentation, etc.
-- [ ] Document the hell out of the interesting days (day 5, 6, 9)
+- [ ] Document the hell out of the interesting days (day 5, 6, 8 ,9)
 
-- [ ] Attempt days 1-X in Hardcaml
+- [ ] Attempt days 2-X in Hardcaml
 - [ ] Write tons of readme stuff to explain
 - [ ] Continue benchmarking completed days
 - [ ] Attempt synthesis / running on DE-10 lite or DE1-SoC w/ Quartus
-
-### Low priority / Not sure if can be bothered/possible
-
-- [ ] Move from iverilog to verilator for better simulation speed
