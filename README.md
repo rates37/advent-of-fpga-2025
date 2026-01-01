@@ -11,7 +11,7 @@ The table below summarises which problems have been successfully solved, the HDL
 
 | Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                           | Logic Element Usage |
 | --- | ------------------------------ | ------------ | ---------------------------------------------------- | ------------------- |
-| 1   | Verilog                        | 19691        | 4780 rotations                                       |                     |
+| 1   | Both                           | 19691        | 4780 rotations                                       |                     |
 | 2   | Verilog                        | 1729         | 38 ranges                                            | 9028 (18%)          |
 | 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                       | 10657 (21%)         |
 | 4   | Verilog                        | 27943        | 137 x 137 grid                                       |                     |
@@ -21,7 +21,7 @@ The table below summarises which problems have been successfully solved, the HDL
 | 8   | Verilog                        | 3342930*     | 1000 x,y,z coordinates                               |                     |
 | 9   | Verilog                        | 129044       | 496 coordinates                                      |                     |
 | 10  | Not yet                        |              |                                                      |                     |
-| 11  | Verilog                        | 656629       | 583 device names                                     |                     |
+| 11  | Verilog                        | 71604        | 583 device names                                     |                     |
 | 12  | Not yet                        |              |                                                      |                     |
 
 \* Day 8's solution not guaranteed to produce correct results. However it is overwhelmingly likely to produce correct results on typical puzzle inputs. Refer to the day 8 section below for details.
