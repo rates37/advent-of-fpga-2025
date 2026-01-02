@@ -64,22 +64,13 @@ module ram_dp #(
     always @(posedge clk) begin
         if (we_a) begin
             memory[addr_a] <= w_data_a;
-            r_data_a <= w_data_a;
-        end else begin
-            r_data_a <= memory[addr_a];
         end
-    end
+        r_data_a <= memory[addr_a];
 
-    // port b:
-    always @(posedge clk) begin
-        if (we_b && !(we_a && addr_a == addr_b)) begin
+        if (we_b) begin
             memory[addr_b] <= w_data_b;
-            r_data_b <= w_data_b;
-        end else if (we_a && addr_a == addr_b) begin
-            r_data_b <= r_data_a;
-        end else begin
-            r_data_b <= memory[addr_b];
         end
+        r_data_b <= memory[addr_b];
     end
 
 endmodule

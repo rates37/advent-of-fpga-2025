@@ -17,7 +17,7 @@ The table below summarises which problems have been successfully solved, the HDL
 | 4   | Verilog                        | 63412        | 137 x 137 grid                                       |
 | 5   | Verilog                        | 66649        | 177 ranges, 1000 query IDs                           |
 | 6   | Verilog                        | 35139        | 4 numeric rows, 1000 operators, ~3709 chars per line |
-| 7   | Verilog                        | 121497       | 142 x 142 grid                                       |
+| 7   | Verilog                        | 121496       | 142 x 142 grid                                       |
 | 8   | Verilog                        | 3342930\*    | 1000 x,y,z coordinates                               |
 | 9   | Verilog                        | 129044       | 496 coordinates                                      |
 | 10  | Not yet                        |              |                                                      |
@@ -437,6 +437,18 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 ## Day 7:
 
 Writeup coming soon
+
+### Key Synthesis Metrics:
+
+The design was compiled using Quartus Prime Lite 18.1 with the target device as a 10M50DAF484C7G (the FPGA on the DE10-lite dev board) and produced the following key usage metrics:
+
+| Metric                             | Usage                 |
+| ---------------------------------- | --------------------- |
+| Logic Elements                     | XXXXXX / 49,760 (27%) |
+| Registers                          | XXXX                  |
+| Memory Bits                        | XXXX / 1,677,312 (X%) |
+| Embedded Multiplier 9-bit elements | 0 / 288 (0%)          |
+| Restricted Fmax (Slow 1200mV 85C)  | XXXXX MHz             |
 
 ## Day 8:
 
