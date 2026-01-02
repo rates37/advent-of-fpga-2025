@@ -97,11 +97,11 @@ module day05_opt_core #(
     reg is_eof;
     reg has_parsed_digit;
 
-    reg [LOG2_MAX_RANGES-1:0] num_ranges;
-    reg [LOG2_MAX_RANGES-1:0] num_merged;
+    reg [LOG2_MAX_RANGES:0] num_ranges;
+    reg [LOG2_MAX_RANGES:0] num_merged;
 
     // insertion:
-    reg [LOG2_MAX_RANGES-1:0] scan_idx;
+    reg [LOG2_MAX_RANGES:0] scan_idx;
 
     // merging variables:
     reg [LOG2_MAX_RANGES:0] merge_idx;
@@ -110,8 +110,8 @@ module day05_opt_core #(
 
     // search/lookup variables:
     reg [63:0] search_val;
-    reg [LOG2_MAX_RANGES-1:0] low;
-    reg [LOG2_MAX_RANGES-1:0] high; // uses binary search to optimise lookups
+    reg [LOG2_MAX_RANGES:0] low;
+    reg [LOG2_MAX_RANGES:0] high; // uses binary search to optimise lookups
 
     // logic implementation:
     always @(posedge clk) begin
@@ -133,8 +133,8 @@ module day05_opt_core #(
             m_ram_addr <= 0;
         end else begin
             // default disable writes
-            r_ram_addr <= 0;
-            m_ram_addr <= 0;
+            r_ram_we <= 0;
+            m_ram_we <= 0;
 
             case (state)
                 S_IDLE: begin
@@ -150,7 +150,6 @@ module day05_opt_core #(
 
                 S_PARSE_RANGE: begin
                     if (rom_valid) begin
-
                         // check if numeric char:
                         if (rom_data >= "0" && rom_data <= "9") begin
                             current_num <= ((current_num<<3) + (current_num<<1)) + (rom_data - "0");
@@ -171,7 +170,7 @@ module day05_opt_core #(
                         end
 
                         // increment for next character (if not moving to insert)
-                        if (rom_data != "\n" || has_parsed_digit) begin
+                        if (!(rom_data == "\n" && has_parsed_digit)) begin
                                 rom_addr <= rom_addr + 1;
                         end
                     end else begin
@@ -295,7 +294,6 @@ module day05_opt_core #(
                     m_ram_addr <= num_merged;
                     m_ram_w_data <= {curr_start, curr_end};
                     m_ram_we <= 1;
-                    num_nodes
                     num_merged <= num_merged + 1;
                     part2_result <= part2_result + (curr_end - curr_start + 1);
 
@@ -348,7 +346,7 @@ module day05_opt_core #(
                     if (low > high) begin
                         state <= S_SEARCH_NEXT;
                     end else begin
-                        m_ram_addr <= low + (high-low) / 2;
+                        m_ram_addr <= low + ((high-low) >> 1);
                         state <= S_SEARCH_WAIT;
                     end
                 end
@@ -358,10 +356,10 @@ module day05_opt_core #(
                 end
 
                 S_SEARCH_EVAL: begin
-                    if (search_val >= m_ram_rdata[127:64] && search_val <= m_ram_rdata[63:0]) begin
+                    if (search_val >= m_ram_r_data[127:64] && search_val <= m_ram_r_data[63:0]) begin
                         part1_result <= part1_result + 1;
                         state <= S_SEARCH_NEXT;
-                    end else if (search_val < m_ram_rdata[127:64]) begin
+                    end else if (search_val < m_ram_r_data[127:64]) begin
                         if (m_ram_addr == 0) begin
                             state <= S_SEARCH_NEXT;
                         end else begin
