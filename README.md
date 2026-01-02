@@ -15,7 +15,7 @@ The table below summarises which problems have been successfully solved, the HDL
 | 2   | Verilog                        | 1729         | 38 ranges                                            |
 | 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                       |
 | 4   | Verilog                        | 63412        | 137 x 137 grid                                       |
-| 5   | Verilog                        | 35614        | 177 ranges, 1000 query IDs                           |
+| 5   | Verilog                        | 75105        | 177 ranges, 1000 query IDs                           |
 | 6   | Verilog                        | 33157        | 4 numeric rows, 1000 operators, ~3709 chars per line |
 | 7   | Verilog                        | 40755        | 142 x 142 grid                                       |
 | 8   | Verilog                        | 3342930\*    | 1000 x,y,z coordinates                               |
@@ -416,7 +416,7 @@ Writeup coming soon
 
 ## Day 8:
 
-Currently unsolved
+Writeup coming soon
 
 ## Day 9:
 
