@@ -9,20 +9,20 @@ Some ideas for solving puzzles my come from [my attempts at solving these proble
 
 The table below summarises which problems have been successfully solved, the HDL used (Verilog/Hardcaml), and the number of clock cycles used to solve my personal puzzle's input for each day. The 'size' of each puzzle's input has been noted for each day (using my personal puzzle input file). The discussions below often test with various size inputs, not just my personal puzzle inputs. As per [the advent of code rules](https://adventofcode.com/2025/about#faq_copying), sharing of actual inputs is not permitted, so feel free to provide your own input text files (these should be formatted in the exact same format as the Advent of Code site provides). However, in my own investigation and benchmarking of my designs, I wrote my own scripts to generate sample inputs of varying sizes. These functions can be found in [`generate_input.py`](/verilog/scripts/generate_input.py).
 
-| Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                           | Logic Element Usage |
-| --- | ------------------------------ | ------------ | ---------------------------------------------------- | ------------------- |
-| 1   | Both                           | 19691        | 4780 rotations                                       |                     |
-| 2   | Verilog                        | 1729         | 38 ranges                                            | 9028 (18%)          |
-| 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                       | 10657 (21%)         |
-| 4   | Verilog                        | 63412        | 137 x 137 grid                                       |                     |
-| 5   | Verilog                        | 35614        | 177 ranges, 1000 query IDs                           |                     |
-| 6   | Verilog                        | 33157        | 4 numeric rows, 1000 operators, ~3709 chars per line |                     |
-| 7   | Verilog                        | 40755        | 142 x 142 grid                                       |                     |
-| 8   | Verilog                        | 3342930*     | 1000 x,y,z coordinates                               |                     |
-| 9   | Verilog                        | 129044       | 496 coordinates                                      |                     |
-| 10  | Not yet                        |              |                                                      |                     |
-| 11  | Verilog                        | 85076        | 583 device names                                     |                     |
-| 12  | Not yet                        |              |                                                      |                     |
+| Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                           |
+| --- | ------------------------------ | ------------ | ---------------------------------------------------- |
+| 1   | Both                           | 19691        | 4780 rotations                                       |
+| 2   | Verilog                        | 1729         | 38 ranges                                            |
+| 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                       |
+| 4   | Verilog                        | 63412        | 137 x 137 grid                                       |
+| 5   | Verilog                        | 35614        | 177 ranges, 1000 query IDs                           |
+| 6   | Verilog                        | 33157        | 4 numeric rows, 1000 operators, ~3709 chars per line |
+| 7   | Verilog                        | 40755        | 142 x 142 grid                                       |
+| 8   | Verilog                        | 3342930\*    | 1000 x,y,z coordinates                               |
+| 9   | Verilog                        | 129044       | 496 coordinates                                      |
+| 10  | Not yet                        |              |                                                      |
+| 11  | Verilog                        | 85076        | 583 device names                                     |
+| 12  | Not yet                        |              |                                                      |
 
 \* Day 8's solution not guaranteed to produce correct results. However it is overwhelmingly likely to produce correct results on typical puzzle inputs. Refer to the day 8 section below for details.
 
@@ -136,6 +136,18 @@ Since all that this module needs to store is the current dial position and the o
 
 For inputs where the accumulated results will exceed $2^{16}-1$, the parameter `OUTPUT_DATA_WIDTH` should be increased, which will increase the number of registers used by the solver module. For inputs where the amount rotated by will exceed $2^{16}-1$, the parameter `INPUT_DATA_WIDTH` should be increased, which will increase the number of registers used in the decoder module, as well as the width of the wire that passes rotation amount from the decoder to the solver module. Both of these cases are highly unlikely given the nature of the puzzle.
 
+### Key Synthesis Metrics:
+
+The design was compiled using Quartus Prime Lite 18.1 with the target device as a 10M50DAF484C7G (the FPGA on the DE10-lite dev board) and produced the following key usage metrics:
+
+| Metric                             | Usage              |
+| ---------------------------------- | ------------------ |
+| Logic Elements                     | 753 / 49,760 (2%)  |
+| Registers                          | 95                 |
+| Memory Bits                        | 0 / 1,677,312 (0%) |
+| Embedded Multiplier 9-bit elements | 0 / 288 (0%)       |
+| Restricted Fmax (Slow 1200mV 85C)  | 20.6 MHz           |
+
 ## Day 2:
 
 Day 2's puzzle involved determining the number of 'invalid' numbers in a series of ranges of positive integers. Invalid numbers are defined as follows:
@@ -248,6 +260,17 @@ The `period_summer` module takes 5 clock cycles to evaluate a consistent range, 
 
 There is a possibility for improvement by adding additional `period_summer` submodules to the `range_summer` module, to allow multiple ranges to be processed in parallel. However, given that input is read character-by-character, it is likely that the decoder/parsing stage will quickly become the computation bottleneck. In an effort to save on resource usage, I decided not to add a secondary range summer in my solution, and I decided the module was "efficient enough" and moved on with other days.
 
+### Key Synthesis Metrics:
+
+The design was compiled using Quartus Prime Lite 18.1 with the target device as a 10M50DAF484C7G (the FPGA on the DE10-lite dev board) and produced the following key usage metrics:
+
+| Metric                             | Usage                |
+| ---------------------------------- | -------------------- |
+| Logic Elements                     | 7,956 / 49,760 (16%) |
+| Registers                          | 1353                 |
+| Memory Bits                        | 0 / 1,677,312 (0%)   |
+| Embedded Multiplier 9-bit elements | 74 / 288 (26%)       |
+| Restricted Fmax (Slow 1200mV 85C)  | 13.15 MHz            |
 
 ## Day 3:
 
@@ -351,9 +374,33 @@ Since the solver only needs to read in 1 (or 2) lines at a time, the number of b
 
 To handle longer input rows (more characters per line), the `MAX_LINE_LEN` parameter in the `day03_core` module can be increased and the logic usage will grow accordingly. My puzzle input only had 100 characters per line and so this was what I tested/benchmarked with. Architecture and efficiency has been discussed above.
 
+### Key Synthesis Metrics:
+
+The design was compiled using Quartus Prime Lite 18.1 with the target device as a 10M50DAF484C7G (the FPGA on the DE10-lite dev board) and produced the following key usage metrics:
+
+| Metric                             | Usage                 |
+| ---------------------------------- | --------------------- |
+| Logic Elements                     | 10,657 / 49,760 (21%) |
+| Registers                          | 2970                  |
+| Memory Bits                        | 0 / 1,677,312 (0%)    |
+| Embedded Multiplier 9-bit elements | 0 / 288 (0%)          |
+| Restricted Fmax (Slow 1200mV 85C)  | 20.61 MHz             |
+
 ## Day 4:
 
 Writeup coming soon
+
+### Key Synthesis Metrics:
+
+The design was compiled using Quartus Prime Lite 18.1 with the target device as a 10M50DAF484C7G (the FPGA on the DE10-lite dev board) and produced the following key usage metrics:
+
+| Metric                             | Usage                   |
+| ---------------------------------- | ----------------------- |
+| Logic Elements                     | 7,641 / 49,760 (15%)    |
+| Registers                          | 1271                    |
+| Memory Bits                        | 45,000 / 1,677,312 (3%) |
+| Embedded Multiplier 9-bit elements | 0 / 288 (0%)            |
+| Restricted Fmax (Slow 1200mV 85C)  | 2.55 MHz                |
 
 ## Day 5:
 
@@ -413,8 +460,6 @@ Verilog - for fun
 
 Hardcaml - to learn something new!
 
-
-
 # Todos / Task List:
 
 - [ ] Finish day 12 in Verilog
@@ -422,13 +467,12 @@ Hardcaml - to learn something new!
 
 - [ ] Check todos in completed days to resolve issues, add documentation, etc.
 - [ ] Document the hell out of the interesting days:
-    * day 5 insertion sort
-    * day 8 no requirement for N^2 memory usage, bitonic sort
-    * day 9 pipeline to make part 2 N^2 ammortised
-    * day 11 CSR graph representation
 
+  - day 5 insertion sort
+  - day 8 no requirement for N^2 memory usage, bitonic sort
+  - day 9 pipeline to make part 2 N^2 ammortised
+  - day 11 CSR graph representation
 
 - [ ] Attempt days 2-X in Hardcaml
 - [ ] Write tons of readme stuff to explain
 - [ ] Continue benchmarking completed days
-- [ ] Attempt synthesis / running on DE-10 lite or DE1-SoC w/ Quartus
