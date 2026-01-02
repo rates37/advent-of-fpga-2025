@@ -16,7 +16,7 @@ The table below summarises which problems have been successfully solved, the HDL
 | 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                       |
 | 4   | Verilog                        | 63412        | 137 x 137 grid                                       |
 | 5   | Verilog                        | 66649        | 177 ranges, 1000 query IDs                           |
-| 6   | Verilog                        | 33157        | 4 numeric rows, 1000 operators, ~3709 chars per line |
+| 6   | Verilog                        | 35139        | 4 numeric rows, 1000 operators, ~3709 chars per line |
 | 7   | Verilog                        | 40755        | 142 x 142 grid                                       |
 | 8   | Verilog                        | 3342930\*    | 1000 x,y,z coordinates                               |
 | 9   | Verilog                        | 129044       | 496 coordinates                                      |
@@ -474,9 +474,11 @@ I like Verilog for its combination of simplicity and fairly easy to imagine exac
 
 I also taught Verilog through a Digital Systems course at my university for four years in a row which has made me quite familiar with it.
 
-### Why is your Ocaml / Hardcaml weird?
+### Why are your Ocaml / Hardcaml approaches weird?
 
 I started learning Ocaml in mid-December 2025, I'm very new to the language so I'm not familiar with the idiomatic way to do things just yet (I'm open to feedback if you have any!).
+
+I haven't looked at anyone's advent of fpga attempts (including last year) to force myself to find / create approaches to tasks, after submission I'm keen to look at other's solutions and see how I could have improved.
 
 ### Why do both Hardcaml and Verilog?
 

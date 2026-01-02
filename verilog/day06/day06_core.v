@@ -19,12 +19,6 @@ module day06_core #(
     output reg done
 );
 
-    // 2D memory grid to store input:
-    localparam MAX_WIDTH = (1 << WIDTH_BITS);
-    localparam MAX_HEIGHT = (1 << HEIGHT_BITS);
-    reg [7:0] grid_mem [0:MAX_HEIGHT-1][0:MAX_WIDTH-1]; // todo dont' need a whole byte per entry here, can just be 4 bits
-    reg [WIDTH_BITS-1:0] row_len [0:MAX_HEIGHT-1]; // track char count of each row to ensure no junk data is considered
-
     // temp variables used in calculation blocks:
     reg col_empty;
     reg [63:0] col_val;
@@ -39,6 +33,7 @@ module day06_core #(
     localparam S_END_BLOCK = 4;
     localparam S_BLOCK_REDUCE = 5; // sequentialy reduce row totals
     localparam S_DONE = 6;
+    localparam S_WAIT_RAM = 7;
     reg [2:0] state;
     reg [2:0] next_state;
 
@@ -62,6 +57,44 @@ module day06_core #(
             mult10 = (val << 3) + (val << 1);
         end
     endfunction
+
+
+    // 2D memory grid to store input:
+    localparam MAX_WIDTH = (1 << WIDTH_BITS);
+    localparam MAX_HEIGHT = (1 << HEIGHT_BITS);
+    reg [WIDTH_BITS-1:0] row_len [0:MAX_HEIGHT-1]; // track char count of each row to ensure no junk data is considered
+
+    wire [7:0] ram_r_data [0:MAX_HEIGHT-1];
+    reg [MAX_HEIGHT-1:0] ram_we; // use same r_addr, w_addr, w_data for all RAMs
+
+    genvar gi;
+    generate
+        for (gi = 0; gi < MAX_HEIGHT; gi=gi+1) begin: row_rams
+            ram #(
+                .WIDTH(8),
+                .DEPTH(MAX_WIDTH),
+                .ADDR_BITS(WIDTH_BITS)
+            ) u_ram_i (
+                .clk(clk),
+                .rst(rst),
+                .we(ram_we[gi]),
+                .w_addr(curr_x),
+                .w_data(rom_data),
+                .r_addr(curr_x),
+                .r_data(ram_r_data[gi])
+            );
+        end
+    endgenerate
+
+    // ram we logic:
+    always @(*) begin
+        ram_we = 0;
+        if (state == S_LOAD_INPUT && rom_valid) begin
+            if (rom_data != "\n") begin
+                ram_we[curr_y] = 1;
+            end
+        end
+    end
 
 
     integer i;
@@ -95,7 +128,8 @@ module day06_core #(
                                 curr_x <= 0;
                             end
                         end else begin
-                            grid_mem[curr_y][curr_x] <= rom_data; // todo convert straight to int here?
+                            // grid_mem[curr_y][curr_x] <= rom_data; // todo convert straight to int here?
+                            // data is auto written to rom using we logic in comb always block above
                             curr_x <= curr_x + 1;
                         end
                         rom_addr <= rom_addr + 1;
@@ -111,9 +145,13 @@ module day06_core #(
                         end else begin
                             max_y <= curr_y;
                         end
-                        state <= S_SCAN_COL;
-                        curr_x <= 0;
+                        state <= S_WAIT_RAM;
+                        curr_x <= 0; // reset for scan
                     end
+                end
+
+                S_WAIT_RAM: begin
+                    state <= S_SCAN_COL;
                 end
 
 
@@ -129,7 +167,7 @@ module day06_core #(
                         for (i=0; i<MAX_HEIGHT; i=i+1) begin 
                             if (i < max_y) begin
                                 if (curr_x < row_len[i[HEIGHT_BITS-1:0]]) begin
-                                    if (grid_mem[i[HEIGHT_BITS-1:0]][curr_x] > 32) begin
+                                    if (ram_r_data[i[HEIGHT_BITS-1:0]] > 32) begin
                                         col_empty = 0; // if the column has at least a single number in it
                                     end
                                 end
@@ -141,6 +179,7 @@ module day06_core #(
                                 state <= S_END_BLOCK;
                             end else begin
                                 curr_x <= curr_x + 1;
+                                state <= S_WAIT_RAM; // get next col (need to wait for clock edge for ram)
                             end
                         end else begin
                             if (!in_block) begin
@@ -165,7 +204,7 @@ module day06_core #(
 
                     // identify operator in bottom row:
                     if (curr_x < row_len[max_y-1]) begin
-                        char_tmp = grid_mem[max_y-1][curr_x];
+                        char_tmp = ram_r_data[max_y-1];
                         if (char_tmp == "+" || char_tmp == "*") begin
                             operator <= char_tmp;
                         end
@@ -175,7 +214,7 @@ module day06_core #(
                     for (i=0; i<MAX_HEIGHT; i=i+1) begin
                         if (i < max_y - 1) begin
                             if (curr_x < row_len[i[HEIGHT_BITS-1:0]]) begin
-                                char_tmp = grid_mem[i[HEIGHT_BITS-1:0]][curr_x];
+                                char_tmp = ram_r_data[i[HEIGHT_BITS-1:0]];
                                 if (char_tmp >= "0" && char_tmp <= "9") begin
                                     // accumulate horizontal (part 1):
                                     p1_nums[i[HEIGHT_BITS-1:0]] <= mult10(p1_nums[i[HEIGHT_BITS-1:0]]) + (char_tmp - "0");
@@ -195,23 +234,23 @@ module day06_core #(
                             p2_acc <= col_val;
                             is_first_p2 <= 0;
                             curr_x <= curr_x + 1;
-                            state <= S_SCAN_COL;
+                            state <= S_WAIT_RAM;
                         end else if (operator == "*") begin
                             // use multiply 'subroutine':
                             mult_a <= p2_acc;
                             mult_b <= col_val;
                             next_state <= S_SCAN_COL;
-                            state <= S_MULT;
+                            state <= S_MULT; // this 1 cycle wait for the multiplication covers ram latency as well
                             curr_x <= curr_x + 1;
                         end else begin
                             // add directly
                             p2_acc <= p2_acc + col_val;
                             curr_x <= curr_x + 1;
-                            state <= S_SCAN_COL;
+                            state <= S_WAIT_RAM;
                         end
                     end else begin
                         curr_x <= curr_x + 1;
-                        state <= S_SCAN_COL;
+                        state <= S_WAIT_RAM;
                     end
                 end
 
@@ -243,7 +282,9 @@ module day06_core #(
                         part1_result <= part1_result + p1_acc;
                         part2_result <= part2_result + p2_acc;
                         in_block <= 0;
-                        state <= S_SCAN_COL;
+                        // state <= S_SCAN_COL;
+                        state <= S_WAIT_RAM;
+                        curr_x <= curr_x + 1;
                     end else begin
                         if (operator == "*") begin
                             mult_a <= p1_acc;
