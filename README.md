@@ -14,7 +14,7 @@ The table below summarises which problems have been successfully solved, the HDL
 | 1   | Both                           | 19691        | 4780 rotations                                       |                     |
 | 2   | Verilog                        | 1729         | 38 ranges                                            | 9028 (18%)          |
 | 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                       | 10657 (21%)         |
-| 4   | Verilog                        | 27943        | 137 x 137 grid                                       |                     |
+| 4   | Verilog                        | 63412        | 137 x 137 grid                                       |                     |
 | 5   | Verilog                        | 35614        | 177 ranges, 1000 query IDs                           |                     |
 | 6   | Verilog                        | 33157        | 4 numeric rows, 1000 operators, ~3709 chars per line |                     |
 | 7   | Verilog                        | 40755        | 142 x 142 grid                                       |                     |
@@ -198,7 +198,7 @@ Okay, so now this gives us a $\mathcal{O}(1)$ formula to find the sum of invalid
 
 Great, but part 2 complicates things a little, by allowing any number of repetitions >= 2. This part uses the same core logic as above, but requires careful handling of seeds of different length. I'll start by explaining the general approach, then highlighting the flaw and how my solution overcomes it.
 
-We can easily find multipliers that can "concatenate" a number with itself many times. The multiplier $M$ is a decimal number with 0s in all digit places except those places that are at multiples of $L$ (the length of the seed), where it is 1 (**using zero-indexing of digits**). As an example, to "concatenate" the number 123 with itself three times, we would multiply it by $M = 1001001$. This idea uses a similar concept to how shift-and-add multiplier circuits work (just using decimal rather than binary).
+We can easily find multipliers that can "concatenate" a number with itself many times. The multiplier $M$ is a decimal number with 0s in all digit places except those places that are at multiples of $L$ (the length of the seed), where it is 1 (**using zero-indexing of digits**). As an example, to "concatenate" the number 123 with itself three times, we would multiply it by $M = 1001001$.
 
 So, we can simply use seeds of different length from length 1 to half the length of the numbers in the target range. For example, if we are looking at a range $[123456, 753213]$, then we would check seeds of length 1, 2, and 3, since invalid numbers with 6 digits can be formed by any of:
 
@@ -248,7 +248,6 @@ The `period_summer` module takes 5 clock cycles to evaluate a consistent range, 
 
 There is a possibility for improvement by adding additional `period_summer` submodules to the `range_summer` module, to allow multiple ranges to be processed in parallel. However, given that input is read character-by-character, it is likely that the decoder/parsing stage will quickly become the computation bottleneck. In an effort to save on resource usage, I decided not to add a secondary range summer in my solution, and I decided the module was "efficient enough" and moved on with other days.
 
-### Quartus Synthesis Results
 
 ## Day 3:
 
@@ -422,7 +421,12 @@ Hardcaml - to learn something new!
 - [ ] Day 10 in Verilog
 
 - [ ] Check todos in completed days to resolve issues, add documentation, etc.
-- [ ] Document the hell out of the interesting days (day 5, 6, 8 ,9)
+- [ ] Document the hell out of the interesting days:
+    * day 5 insertion sort
+    * day 8 no requirement for N^2 memory usage, bitonic sort
+    * day 9 pipeline to make part 2 N^2 ammortised
+    * day 11 CSR graph representation
+
 
 - [ ] Attempt days 2-X in Hardcaml
 - [ ] Write tons of readme stuff to explain

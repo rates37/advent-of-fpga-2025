@@ -4,6 +4,7 @@ VVP := vvp
 SRCS := day04_tb.v \
 		day04_core.v \
 		../utils/rom.v \
+		../utils/ram.v \
 		row_logic.v
 
 OUT := day04_tb.out

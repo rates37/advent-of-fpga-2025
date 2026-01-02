@@ -23,15 +23,64 @@ module day04_core #(
     // define states:
     localparam S_IDLE = 0;
     localparam S_LOAD = 1; // load grid into memory
-    localparam S_SCAN = 2; // scan over the grid and count/mark accessible cells
-    localparam S_APPLY = 3; // remove accessible cells
-    localparam S_DONE = 4;
-    reg [2:0] state;
+
+    // scan pipeline:
+    localparam S_SCAN_INIT = 2;
+    localparam S_SCAN_REQ1 = 3;
+    localparam S_SCAN_GET0 = 4;
+    localparam S_SCAN_GET1 = 5;
+    localparam S_SCAN_PROCESS = 6;
+    localparam S_SCAN_WAIT = 7;
+
+    // apply pipeline:
+    localparam S_APPLY_READ = 8;
+    localparam S_APPLY_WAIT = 9;
+    localparam S_APPLY_WRITE = 10;
+
+    localparam S_DONE = 11;
+    reg [3:0] state;
 
     // grid storage:
-    reg [MAX_COLS-1:0] grid_row [0:MAX_ROWS-1];
+    reg grid_we;
+    reg [LOG2_MAX_ROWS-1:0] grid_w_addr;
+    reg [LOG2_MAX_ROWS-1:0] grid_r_addr;
+    reg [MAX_COLS-1:0] grid_w_data;
+    wire [MAX_COLS-1:0] grid_r_data;
+
+    reg mask_we;
+    reg [LOG2_MAX_ROWS-1:0] mask_w_addr;
+    reg [LOG2_MAX_ROWS-1:0] mask_r_addr;
+    reg [MAX_COLS-1:0] mask_w_data;
+    wire [MAX_COLS-1:0] mask_r_data;
+
+    ram #(
+        .WIDTH(MAX_COLS),
+        .DEPTH(MAX_ROWS),
+        .ADDR_BITS(LOG2_MAX_ROWS)
+    ) u_grid_ram_0 (
+        .clk(clk),
+        .rst(rst),
+        .we(grid_we),
+        .w_addr(grid_w_addr),
+        .w_data(grid_w_data),
+        .r_addr(grid_r_addr),
+        .r_data(grid_r_data)
+    );
+    ram #(
+        .WIDTH(MAX_COLS),
+        .DEPTH(MAX_ROWS),
+        .ADDR_BITS(LOG2_MAX_ROWS)
+    ) u_mask_ram_0 (
+        .clk(clk),
+        .rst(rst),
+        .we(mask_we),
+        .w_addr(mask_w_addr),
+        .w_data(mask_w_data),
+        .r_addr(mask_r_addr),
+        .r_data(mask_r_data)
+    );
     reg [LOG2_MAX_ROWS-1:0] n_rows;
-    reg [LOG2_MAX_COLS:0] n_cols;
+    reg [LOG2_MAX_ROWS:0] n_cols;
 
     // memory for loading state:
     reg [LOG2_MAX_ROWS-1:0] load_row;
@@ -44,15 +93,10 @@ module day04_core #(
     reg [63:0] total_removed;
     reg first_scan_flag; // use to stop part 1 computation early
 
-    reg [MAX_COLS-1:0] removal_mask [0:MAX_ROWS-1];
-
     // 3-row window wires:
-    wire [MAX_COLS-1:0] row_prev_wire;
-    wire [MAX_COLS-1:0] row_curr_wire;
-    wire [MAX_COLS-1:0] row_next_wire;
-    assign row_prev_wire = (scan_row > 0) ? grid_row[scan_row-1] : {MAX_COLS{1'b0}};
-    assign row_curr_wire = (scan_row < n_rows) ? grid_row[scan_row] : {MAX_COLS{1'b0}};
-    assign row_next_wire = (scan_row < n_rows-1) ? grid_row[scan_row+1] : {MAX_COLS{1'b0}};
+    reg [MAX_COLS-1:0] row_prev;
+    reg [MAX_COLS-1:0] row_curr;
+    reg [MAX_COLS-1:0] row_next;
 
     wire [MAX_COLS-1:0] accessible;
     // instantiate row logic:
@@ -60,9 +104,9 @@ module day04_core #(
         .MAX_COLS(MAX_COLS),
         .LOG2_MAX_COLS(LOG2_MAX_COLS)
     ) u_row_logic_0 (
-        .row_prev(row_prev_wire),
-        .row_curr(row_curr_wire),
-        .row_next(row_next_wire),
+        .row_prev(row_prev),
+        .row_curr(row_curr),
+        .row_next(row_next),
         .n_cols(n_cols),
         .accessible(accessible)
     );
@@ -82,9 +126,15 @@ module day04_core #(
         end
     endfunction
 
+    reg [LOG2_MAX_ROWS-1:0] apply_row;
     integer i;
     reg [15:0] ones_count_val;
+
     always @(posedge clk) begin
+        // defaults:
+        grid_we <= 0;
+        mask_we <= 0;
+
         if (rst) begin
             state <= S_IDLE;
             rom_addr <= 0;
@@ -100,12 +150,18 @@ module day04_core #(
             scan_count <= 0;
             total_removed <= 0;
             first_scan_flag <= 1;
+            apply_row <= 0;
+            grid_w_addr <= 0;
+            grid_w_data <= 0;
+            grid_r_addr <= 0;
+            
+            mask_w_addr <= 0;
+            mask_w_data <= 0;
+            mask_r_addr <= 0;
 
-            // clear the masks/grid storage:
-            for (i=0; i<MAX_ROWS; i=i+1) begin
-                grid_row[i] <= 0;
-                removal_mask[i] <= 0;
-            end
+            row_prev <= 0;
+            row_curr <= 0;
+            row_next <= 0;
         end else begin
             case (state)
                 S_IDLE: begin
@@ -118,15 +174,16 @@ module day04_core #(
                     if (!rom_valid) begin
                         // reached EOF
                         if (load_col > 0) begin
-                            grid_row[load_row] <= load_buffer;
+                            grid_we <= 1;
+                            grid_w_addr <= load_row;
+                            grid_w_data <= load_buffer;
                             n_rows <= load_row + 1;
                         end else begin
                             n_rows <= load_row;
                         end
                         scan_row <= 0;
                         scan_count <= 0;
-                        first_scan_flag <= 1;
-                        state <= S_SCAN;
+                        state <= S_SCAN_INIT;
                     end else begin
                         case (rom_data)
                             "@": begin
@@ -141,7 +198,10 @@ module day04_core #(
 
                             "\n": begin
                                 // end of current row:
-                                grid_row[load_row] <= load_buffer;
+                                grid_we <= 1;
+                                grid_w_addr <= load_row;
+                                grid_w_data <= load_buffer;
+
                                 if (n_cols == 0) begin
                                     n_cols <= load_col;
                                 end
@@ -158,42 +218,120 @@ module day04_core #(
                     end
                 end
 
+                S_SCAN_INIT: begin
+                    grid_r_addr <= 0;
+                    state <= S_SCAN_REQ1;
+                end
 
-                S_SCAN: begin
-                    // process one row per cycle
+
+                S_SCAN_REQ1: begin
+                    // row 0 requested in S_SCAN_INIT, will be ready next state
+                    // request row 1
+                    if (n_rows > 1) begin
+                        grid_r_addr <= 1;
+                    end else begin
+                        grid_r_addr <= 0;
+                    end
+                    state <= S_SCAN_GET0;
+                end
+
+
+                S_SCAN_GET0: begin
+                    // store row 0:
+                    row_curr <= grid_r_data;
+                    row_prev <= 0;
+
+                    // request row 2:
+                    if (n_rows > 2) begin
+                        grid_r_addr <= 2;
+                    end else begin
+                        grid_r_addr <= 0;
+                    end
+                    state <= S_SCAN_GET1;
+                end
+
+                S_SCAN_GET1: begin
+                    // store row 1
+                    if (n_rows > 1) begin
+                        row_next <= grid_r_data;
+                    end else begin
+                        row_next <= 0;
+                    end
+
+                    scan_row <= 0;
+                    state <= S_SCAN_PROCESS;
+                end
+
+                S_SCAN_PROCESS: begin
                     if (scan_row >= n_rows) begin
-                        // finished scan:
                         if (first_scan_flag) begin
                             part1_result <= scan_count;
                             first_scan_flag <= 0;
                         end
-                        state <= S_APPLY;
+                        apply_row <= 0;
+                        state <= S_APPLY_READ;
                     end else begin
+                        // compute the mask and write to mask ram:
                         ones_count_val = ones_count(accessible, n_cols);
                         scan_count <= scan_count + ones_count_val;
-                        removal_mask[scan_row] <= accessible;
+
+                        mask_we <= 1;
+                        mask_w_addr <= scan_row;
+                        mask_w_data <= accessible;
+
+                        // prepare for next row: (shift window)
+                        row_prev <= row_curr;
+                        row_curr <= row_next;
+
+                        // update next row from pipeline (was already requested in GET0 or prev PROCESS)
+                        if (scan_row + 2 < n_rows) begin
+                            row_next <= grid_r_data;
+                        end else begin
+                            row_next <= 0;
+                        end 
+
+                        // request next row_next so it is ready when it needs to be used:
+                        grid_r_addr <= scan_row + 3;
                         scan_row <= scan_row + 1;
+                        state <= S_SCAN_WAIT;
                     end
                 end
 
+                S_SCAN_WAIT: begin
+                    // wait for ram read:
+                    state <= S_SCAN_PROCESS;
+                end
 
-                S_APPLY: begin
+                S_APPLY_READ: begin
                     if (scan_count == 0) begin
                         // none removed in this scan -> finished!
                         part2_result <= total_removed;
                         state <= S_DONE;
-                    end else begin
-                        // apply removals:
-                        for (i=0; i<MAX_ROWS; i=i+1) begin
-                            grid_row[i] <= grid_row[i] & ~removal_mask[i];
-                            removal_mask[i] <= 0;
-                        end
-                        // accumulate total and scan grid again:
+                    end else if (apply_row >= n_rows) begin
+                        // finished apply pass -> restart the scan:
                         total_removed <= total_removed + scan_count;
                         scan_count <= 0;
+
                         scan_row <= 0;
-                        state <= S_SCAN;
+                        state <= S_SCAN_INIT;
+                    end else begin
+                        // get the grid and the mask to apply
+                        grid_r_addr <= apply_row;
+                        mask_r_addr <= apply_row;
+                        state <= S_APPLY_WAIT;
                     end
+                end
+
+                S_APPLY_WAIT: begin
+                    state <= S_APPLY_WRITE;
+                end
+
+                S_APPLY_WRITE: begin
+                    grid_we <= 1;
+                    grid_w_addr <= apply_row;
+                    grid_w_data <= grid_r_data & ~mask_r_data;
+                    apply_row <= apply_row + 1;
+                    state <= S_APPLY_READ;
                 end
 
 
