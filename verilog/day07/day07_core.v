@@ -38,7 +38,7 @@ module day07_core #(
     reg last_row_flag;
     
     // Clear counter for next buffer
-    reg [8:0] clear_col;
+    reg [ADDR_BITS:0] init_col;
 
     // Ram signals
     // Buffer 0: 0 to MAX_WIDTH-1
@@ -47,16 +47,14 @@ module day07_core #(
     reg [ADDR_BITS-1:0] ram_addr_a, ram_addr_b;
     reg [63:0] ram_w_data_a, ram_w_data_b;
     wire [63:0] ram_r_data_a, ram_r_data_b;
-    wire ram_init_done;
 
     // row storage: (0 = '.', 1 = '^')
     reg [MAX_WIDTH-1:0] row_bits;
 
-    ram_dp_init #(
+    ram_dp #(
         .WIDTH(64),
         .DEPTH(MAX_WIDTH * 2),
-        .ADDR_BITS(ADDR_BITS),
-        .INIT_VALUE(64'd0)
+        .ADDR_BITS(ADDR_BITS)
     ) ram_ram (
         .clk(clk),
         .rst(rst),
@@ -67,8 +65,7 @@ module day07_core #(
         .we_b(ram_we_b),
         .addr_b(ram_addr_b),
         .w_data_b(ram_w_data_b),
-        .r_data_b(ram_r_data_b),
-        .init_done(ram_init_done)
+        .r_data_b(ram_r_data_b)
     );
 
     // Address calculation for double-buffered RAM
@@ -96,7 +93,7 @@ module day07_core #(
             row_width <= 0;
             last_row_flag <= 0;
             next_row_addr <= 0;
-            clear_col <= 0;
+            init_col <= 0;
             proc_col <= 0;
             row_bits <= 0;
             
@@ -117,11 +114,16 @@ module day07_core #(
 
             case (state)
                 S_INIT: begin
-                    // Wait for RAM init
-                    if (ram_init_done) begin
+                    // clear ram:
+                    ram_we_a <= 1;
+                    ram_addr_a <= init_col[ADDR_BITS-1:0];
+                    ram_w_data_a <= 0;
+                    if (init_col >= (MAX_WIDTH<<1)-1) begin
                         state <= S_FIND_S;
                         rom_addr <= 0;
                         col <= 0;
+                    end else begin
+                        init_col <= init_col + 1;
                     end
                 end
 
@@ -167,7 +169,7 @@ module day07_core #(
                         next_row_addr <= rom_addr + 1;
                         last_row_flag <= (rom_data == 0);
                         state <= S_CLEAR_NEXT;
-                        clear_col <= 0;
+                        init_col <= 0;
                     end else begin
                         // 0 = '.', 1 = '^'
                         row_bits[col] <= (rom_data == "^") ? 1 : 0;
@@ -179,14 +181,14 @@ module day07_core #(
                 S_CLEAR_NEXT: begin
                     // Clear write buffer
                     ram_we_a <= 1;
-                    ram_addr_a <= write_buf_base + clear_col;
+                    ram_addr_a <= write_buf_base + init_col;
                     ram_w_data_a <= 64'd0;
                     
-                    if (clear_col >= row_width) begin
+                    if (init_col >= row_width) begin
                         state <= S_PROC_RD1;
                         col <= 0;
                     end else begin
-                        clear_col <= clear_col + 1;
+                        init_col <= init_col + 1;
                     end
                 end
 
