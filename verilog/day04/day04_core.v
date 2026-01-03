@@ -31,13 +31,9 @@ module day04_core #(
     localparam S_SCAN_GET1 = 5;
     localparam S_SCAN_PROCESS = 6;
     localparam S_SCAN_WAIT = 7;
+    localparam S_SCAN_FLUSH = 8;
 
-    // apply pipeline:
-    localparam S_APPLY_READ = 8;
-    localparam S_APPLY_WAIT = 9;
-    localparam S_APPLY_WRITE = 10;
-
-    localparam S_DONE = 11;
+    localparam S_DONE = 9;
     reg [3:0] state;
 
     // grid storage:
@@ -47,11 +43,7 @@ module day04_core #(
     reg [MAX_COLS-1:0] grid_w_data;
     wire [MAX_COLS-1:0] grid_r_data;
 
-    reg mask_we;
-    reg [LOG2_MAX_ROWS-1:0] mask_w_addr;
-    reg [LOG2_MAX_ROWS-1:0] mask_r_addr;
-    reg [MAX_COLS-1:0] mask_w_data;
-    wire [MAX_COLS-1:0] mask_r_data;
+    reg [MAX_COLS-1:0] mask_prev; // the mask / update to apply to the previous row 
 
     ram #(
         .WIDTH(MAX_COLS),
@@ -65,19 +57,6 @@ module day04_core #(
         .w_data(grid_w_data),
         .r_addr(grid_r_addr),
         .r_data(grid_r_data)
-    );
-    ram #(
-        .WIDTH(MAX_COLS),
-        .DEPTH(MAX_ROWS),
-        .ADDR_BITS(LOG2_MAX_ROWS)
-    ) u_mask_ram_0 (
-        .clk(clk),
-        .rst(rst),
-        .we(mask_we),
-        .w_addr(mask_w_addr),
-        .w_data(mask_w_data),
-        .r_addr(mask_r_addr),
-        .r_data(mask_r_data)
     );
     reg [LOG2_MAX_ROWS-1:0] n_rows;
     reg [LOG2_MAX_ROWS:0] n_cols;
@@ -126,14 +105,11 @@ module day04_core #(
         end
     endfunction
 
-    reg [LOG2_MAX_ROWS-1:0] apply_row;
-    integer i;
     reg [15:0] ones_count_val;
 
     always @(posedge clk) begin
         // defaults:
         grid_we <= 0;
-        mask_we <= 0;
 
         if (rst) begin
             state <= S_IDLE;
@@ -150,14 +126,11 @@ module day04_core #(
             scan_count <= 0;
             total_removed <= 0;
             first_scan_flag <= 1;
-            apply_row <= 0;
             grid_w_addr <= 0;
             grid_w_data <= 0;
             grid_r_addr <= 0;
             
-            mask_w_addr <= 0;
-            mask_w_data <= 0;
-            mask_r_addr <= 0;
+            mask_prev <= 0;
 
             row_prev <= 0;
             row_curr <= 0;
@@ -268,18 +241,22 @@ module day04_core #(
                             part1_result <= scan_count;
                             first_scan_flag <= 0;
                         end
-                        apply_row <= 0;
-                        state <= S_APPLY_READ;
+                        state <= S_SCAN_FLUSH;
                     end else begin
-                        // compute the mask and write to mask ram:
+                        // compute the mask:
                         ones_count_val = ones_count(accessible, n_cols);
                         scan_count <= scan_count + ones_count_val;
 
-                        mask_we <= 1;
-                        mask_w_addr <= scan_row;
-                        mask_w_data <= accessible;
+                        // buffer the mask:
+                        mask_prev <= accessible;
 
-                        // prepare for next row: (shift window)
+                        // apply update to prev row (if exists);
+                        if (scan_row > 0) begin
+                            grid_we <= 1;
+                            grid_w_addr <= scan_row - 1;
+                            grid_w_data <= row_prev & ~mask_prev;
+                        end
+
                         row_prev <= row_curr;
                         row_curr <= row_next;
 
@@ -302,36 +279,22 @@ module day04_core #(
                     state <= S_SCAN_PROCESS;
                 end
 
-                S_APPLY_READ: begin
+                S_SCAN_FLUSH: begin
+                    // write the final row update:
+                    grid_we <= 1;
+                    grid_w_addr <= n_rows - 1;
+                    grid_w_data <= row_prev & ~mask_prev;
+
                     if (scan_count == 0) begin
-                        // none removed in this scan -> finished!
+                        // no updates -> end
                         part2_result <= total_removed;
                         state <= S_DONE;
-                    end else if (apply_row >= n_rows) begin
-                        // finished apply pass -> restart the scan:
+                    end else begin
                         total_removed <= total_removed + scan_count;
                         scan_count <= 0;
-
                         scan_row <= 0;
                         state <= S_SCAN_INIT;
-                    end else begin
-                        // get the grid and the mask to apply
-                        grid_r_addr <= apply_row;
-                        mask_r_addr <= apply_row;
-                        state <= S_APPLY_WAIT;
                     end
-                end
-
-                S_APPLY_WAIT: begin
-                    state <= S_APPLY_WRITE;
-                end
-
-                S_APPLY_WRITE: begin
-                    grid_we <= 1;
-                    grid_w_addr <= apply_row;
-                    grid_w_data <= grid_r_data & ~mask_r_data;
-                    apply_row <= apply_row + 1;
-                    state <= S_APPLY_READ;
                 end
 
 
