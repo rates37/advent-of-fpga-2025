@@ -62,6 +62,30 @@ Took 561 clock cycles
 day02_tb.v:90: $finish called at 5705000 (1ps)
 ```
 
+## Hardcaml:
+Install requirements:
+
+```sh
+opam install hardcaml hardcaml_waveterm ppx_hardcaml stdio dune
+```
+
+Build project / run with input text file as argument:
+
+```sh
+user@machine ~/advent-of-fpga-2025 $ cd ./advent-of-hardcaml
+
+user@machine dune build
+
+user@machine dune exec ./day01/day01_tb.exe -- ./day01/sample_input.txt
+Loading input from file: ./day01/sample_input.txt
+Loaded 39 characters into rom
+Day 01 complete
+Part 1 result: 3
+Part 2 result: 6
+Took 41 clock cycles
+```
+
+
 # Design Approaches / Discussion
 
 ## Day 1 Overview:
