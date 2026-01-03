@@ -1,7 +1,7 @@
 module day04_core #(
     parameter N_ADDR_BITS = 16,
-    parameter MAX_ROWS = 150, // my puzzle input was 137x137
-    parameter MAX_COLS = 150,
+    parameter MAX_ROWS = 250, // my puzzle input was 137x137
+    parameter MAX_COLS = 250,
     parameter LOG2_MAX_COLS = 8,
     parameter LOG2_MAX_ROWS = 8
 ) (

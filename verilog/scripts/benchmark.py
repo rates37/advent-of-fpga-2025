@@ -256,5 +256,6 @@ def benchmark_all() -> None:
 if __name__ == "__main__":
     # print(benchmark_day02(lo=10, hi=1000, n=4, repeats=5, timeout=30))
     # benchmark_day03(lo=10, hi=1000, n=4, repeats=5, timeout=30)
-    benchmark_day07(lo=10, hi=250, n=5, repeats=5, timeout=5)
+    # benchmark_day07(lo=10, hi=250, n=5, repeats=5, timeout=5)
+    benchmark_day04(lo=10, hi=249, n=4, repeats=5, timeout=30)
     # benchmark_all()

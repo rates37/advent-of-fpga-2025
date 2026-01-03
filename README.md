@@ -63,6 +63,7 @@ day02_tb.v:90: $finish called at 5705000 (1ps)
 ```
 
 ## Hardcaml:
+
 Install requirements:
 
 ```sh
@@ -84,7 +85,6 @@ Part 1 result: 3
 Part 2 result: 6
 Took 41 clock cycles
 ```
-
 
 # Design Approaches / Discussion
 
@@ -412,7 +412,64 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 ## Day 4:
 
-Writeup coming soon
+Day 4's puzzle was a grid-based problem. The puzzle input was a sqaure grid of '.' and '@' characters, representing empty squares and rolls of paper. A roll of paper is 'accessible' by the elves' fork-lift if it has less than 4 rolls of paper in the surrounding 8 positions (up, down, left, right, and the four diagonals). The aim of part 1 of this puzzle is to count the number of accessible rolls of paper in the input grid. Part 2 of this puzzle was to remove the accessible rolls repeatedly, until there are no more accessible rolls in the grid.
+
+Day 4's puzzle didn't have much challenging regarding understanding the solution, as it is a relatively simple approach of iteratively traversing the grid, row-by-row, counting accessible cells (storing the count on the first iteration for part 1 result), and updating the grid cells.
+
+### Implementation in Hardware
+
+Today's puzzle was the first where the entire input needed to be stored. Since the input size is so large (137x137 = 18,769 characters for my personal puzzle input), it is infeasible to store grids of this size in registers.
+
+<details>
+    <summary>
+        <strong>Click to expand/collapse short explanation (<s>rambling</s>) about memory and registers in FPGAs. Not important to understanding the solution but might be interesting to some readers.
+        </strong>
+    </summary>
+    In FPGA chips, there are different ways bits can be stored - the two ones of interest here are registers and block RAMs. They are handled very differently and there are different amounts in the chip itself.
+    <br/>
+    <br/>
+    Registers are individual D-flip-flops, which store a single bit. Typically, the FPGA has one register in each logic cell (the smallest unit on an FPGA), and it is located directly next to the LUTs. Registers are very fast and have low latency. Another benefit to registers is that they can be written to in parallel, multiple per clock edge (e.g. can perform thousands of writes simultaneously). The main drawback of registers is that there are not many of them - a medium to large-sized FPGA might have 200,000 logic cells, but that only equates to about 25kB of data storage. Another drawback is that because they support large numbers of updates per clock edge, complex (or careless) use of registers can inadvertently synthesise a very large amount of logic.
+    <br/>
+    <br/>
+    Block RAM (BRAM, Memory Bits, M9K, etc.) is another form of memory that is included in most FPGAs. Rather than being distributed and sparse like registers, they are dense memory components within the FPGA, typically made with SRAM blocks, more like cache memory in a CPU. Within the FPGA, each unit is distributed throughout (so that logic cells in different regions of the FPGA may access memory blocks that are closer to them). They are large arrays of memory (on a DE10-lite FPGA, the one that I have access to, they are referred to as "Intel M9K" embedded memory blocks). The key difference is that block RAM is <b>sequential</b>, meaning each block often only supports read/writes of 1 or 2 addresses per clock cycle. This makes accessing lots of the data simultaneously difficult, as it often adds an additional clock cycle of latency between each access, and memory needs to be loaded from a specific address rather than freely immediately accessed at any point. These are often used for data storage, buffers, FIFOs, ROMs, etc.
+</details>
+<br/>
+
+Since the grid is too large to feasibly fit within registers (without dramatically affecting the interconnecting logic), I created 1-port and 2-port RAM modules that provide an addressable interface to a block ram of configurable size. Often this would be done through vendor-specific methods (e.g., Quartus' IP Wizard feature), however to ensure ease of use for simulation, I wrote these modules from scratch. Depending on the capability of the EDA Synthesis tool, it may or may not be able to infer block memory. For me, Quartus 18.1 Prime Lite was able to infer M9K elements for my target device (Max 10 10M50DAF484C7G).
+
+As for my actual approach in Verilog, I used a sliding window approach. To count whether a roll in a given row is accessible, we need to observe its neighbours, which lie in the current row, the row above, and the row below. I created a combinational [`row_logic`](verilog/day04/row_logic.v) module, that takes in the window of three rows, and outputs a 1-hot vector for the current row, indicating whether or not each cell is accessible.
+
+The [`day04_core`](verilog/day04/day04_core.v) module reads the grid into a RAM module, using a single bit for each cell, (storing '@' characters as 1, and '.' characters as 0), then proceeds to iteratively fetch the rows in the window from ram, and count the accessible cells in each row. The 1-hot accessible row vector is stored as a mask, and after processing the next row, the mask is used to update the grid in RAM, as the next state of the grid row can be computed using a bitwise AND; `next_curr_row <= curr_row & ~accessible`, as this will effectively 'turn off' the bits where accessible rolls of paper are located.
+
+This process is repeated over and over until no cells are changed after an entire sweep of the grid, at which point the puzzle is complete.
+
+### Benchmarking and Evaluation
+
+My day 4 solution was evaluated in a similar manner to previous days. It was similarly evaluated over an average/stdev of 5 runs. Tested with varying the dimensions of the input grid, and randomly generating which cells are paper/empty with a random density in the range 0.45-0.65. My real puzzle input had 137 ranges to evaluate. The plot below evaluates number of ranges between 10 and 250 (a decent amount larger than the real puzzle input).
+
+<p align="center">
+<img src="verilog/scripts/benchmarks/day04_benchmark_20260104_002835.png" alt="Plot of clock cycles vs input size" width="720">
+</p>
+
+As the grid size is quadratic with with respect to the width/height, a slight quadratic trend can be observed in the plot above, as the input file is still read character by character. However, since row-processing occurs in parallel, the remainder of the computation is $\mathcal{O}(N)$, which explains the sort of 'flattened' or wider shape of the graph.
+
+It's also noted that the stdev error bars can be seen to grow as input size increases, which is due to the random nature of the generated inputs and the fact that the number of times the grid needs to be traversed is dependent on the input contents (not just the size).
+
+### Scalability
+
+Since the solver needs to store the entire input grid, the overall scalability of this solution is somewhat limited, in that if there are not enough memory blocks in the target device, the design itself will become unsynthesisable. Furthermore, the `row_logic` module processes an entire row in parallel, which is synthesisable for the 100-200 width rows, however significantly larger than this would require the module to be refactored, into an iterative one, perhaps processing "blocks" of the input window over multiple clock cycles, rather than the entire window at once.
+
+The size of the puzzle input to the design has been parameterised, so the input size can be changed easily.
+
+```verilog
+module day04_core #(
+    parameter N_ADDR_BITS = 16,
+    parameter MAX_ROWS = 250, // my puzzle input was 137x137
+    parameter MAX_COLS = 250,
+    parameter LOG2_MAX_COLS = 8,
+    parameter LOG2_MAX_ROWS = 8
+)
+```
 
 ### Key Synthesis Metrics:
 
@@ -420,11 +477,13 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 | Metric                             | Usage                   |
 | ---------------------------------- | ----------------------- |
-| Logic Elements                     | 7,641 / 49,760 (15%)    |
-| Registers                          | 1271                    |
-| Memory Bits                        | 45,000 / 1,677,312 (3%) |
+| Logic Elements                     | 7,028 / 49,760 (14%)    |
+| Registers                          | 1172                    |
+| Memory Bits                        | 19,044 / 1,677,312 (3%) |
 | Embedded Multiplier 9-bit elements | 0 / 288 (0%)            |
-| Restricted Fmax (Slow 1200mV 85C)  | 2.55 MHz                |
+| Restricted Fmax (Slow 1200mV 85C)  | 2.82 MHz                |
+
+Note: The above was compiled with the grid size parameters set to 137x137, since those are the dimensions of my puzzle input. The relatively low Fmax is almost definitely due to the purely combinational [`row_logic`](verilog/day04/row_logic.v) module, used to count the neighbors of an entire row and identify the accessible cells from the entire current row. This approach is not extremely scalable, and if it were applied to a significantly larger problem input size, it should be split up across multiple clock cycles, with a sliding-window approach, as described in the section above.
 
 ## Day 5:
 
