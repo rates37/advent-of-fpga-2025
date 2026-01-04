@@ -62,6 +62,8 @@ Took 561 clock cycles
 day02_tb.v:90: $finish called at 5705000 (1ps)
 ```
 
+Note: You can not use spaces in the file path argument (or you need to escape them).
+
 ## Hardcaml:
 
 Install requirements:
@@ -738,7 +740,7 @@ works (at least until the competition submission period has passed).
 
 I like Verilog for its combination of simplicity and fairly easy to imagine exactly what hardware circuit it might synthesize to. Other HDLs introduce useful abstractions which I definitely appreciate, but I find the comparatively manual nature of 2001 Verilog charming.
 
-I also taught Verilog through a Digital Systems course at my university for four years in a row which has made me quite familiar with it.
+I also taught Verilog through an introductory Digital Systems course at my university for four years in a row which has made me quite familiar with it.
 
 ### Why are your Ocaml / Hardcaml approaches weird?
 
