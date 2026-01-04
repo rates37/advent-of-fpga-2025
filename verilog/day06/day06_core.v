@@ -287,9 +287,12 @@ module day06_core #(
                         curr_x <= curr_x + 1;
                     end else begin
                         if (operator == "*") begin
+                            // set inputs to the multiply 'subroutine':
                             mult_a <= p1_acc;
                             mult_b <= p1_nums[curr_y];
+                            // set the return state:
                             next_state <= S_BLOCK_REDUCE;
+                            // jump to multiplication subroutine
                             state <= S_MULT;
                         end else begin
                             p1_acc <= p1_acc + p1_nums[curr_y];

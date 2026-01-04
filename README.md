@@ -539,7 +539,51 @@ This design achieved a notably higher Fmax that other days so far, which I belie
 
 ## Day 6:
 
-Writeup coming soon
+Day 6's puzzle input is a large math worksheet, containing a series of numbers stacked vertically with an operator (either addition or multiplication) in the bottom row. Each problem is separated by columns where all rows contain a space character.
+
+Part 1 of the puzzle required interpreting the numbers horizontally (as we would normally read) and applying the operator to evaluate that problem. The required output is then the sum of the results of all problems.
+
+Part 2 of the puzzle was similar, however required the reading of numbers vertically rather than horizontally.
+
+### Implementation in Hardware
+
+[My approach](verilog/day06) to solving this puzzle was to load the entire worksheet into memory, then perform a single left-to-right scan across all columns. During this scan, both part 1 and 2 results are computed in parallel for each problem.
+
+The accumulation of each part's results needed to be handled slightly differently due to their specifications. Since part 1 required reading horizontally, we must accumulate each row's number separately, and only reduce after the entire problem has been read. Meanwhile, part 2 requires reading vertically, and since we iterate on column (not on row), part 2 can be accumulated as we iterate (i.e., there's no need to store the values separately for part 2 like there was for part 1).
+
+To assist with implementation, I wrote a [reference python solution](verilog/day06/reference_sol.py), that aims to align with the FSM as closely as possible, which definitely helped in debugging a lot (and is something I did for a lot of future days as well).
+
+Since the puzzle input is read character by character, this necessitates the usage of a synchronous memory block rather than registers (as my puzzle input was over 16k characters total, and storing this in registers for asynchronous random access is infeasible). This introduces latency, but is an necessary drawback.
+
+Since today's solution didn't have much unique about it, I set myself the additional goal of only using a single multiplier (rather than separate multipliers for part 2 accumulation and part 1 accumulation). To do this, I added a `S_MULT` state to the FSM, and combined with a `next_state` register, this acts as a very rudimentary 'subroutine' similar to how subroutines might be implemented in an assembly language; i.e., set the return address (or in this case, the next state), and then jump to the subroutine label (in this case, set the current state to `S_MULT`). An example usage is shown in the snippet below, from the part of my code where the part 1 result is being accumulated:
+
+```verilog
+// set inputs to the multiply 'subroutine':
+mult_a <= p1_acc;
+mult_b <= p1_nums[curr_y];
+// set the return state:
+next_state <= S_BLOCK_REDUCE;
+// jump to multiplication subroutine
+state <= S_MULT;
+```
+
+Since this approach requires a single linear scan over all rows, it's performance scales linearly with the number of columns in the input. Since the number of rows in the input was very small, I took this to be a characteristic of the input, and mainly benchmarked with increasing the width of rows, rather than changing the height of columns.
+
+### Benchmarking and Evaluation
+
+My day 6 solution was benchmarked similarly to previous days. It was evaluated over an average/stdev of 5 runs. Tested with varying the number of math problems from 10 to 1000, using numbers up to four digits, and is shown in the plot below. My real puzzle input had 1000 math problems and numbers up to three digits.
+
+<p align="center">
+<img src="/Users/satya/Developer/advent-of-fpga-2025/verilog/scripts/benchmarks/day06_benchmark_20251230_201322.png" alt="Plot of clock cycles vs number of math problems" width="720">
+</p>
+
+Note: in generating inputs, I limited the value of the number to be smaller for multiplication math problems (3 digits for multiplication problems, vs 4 digits for addition problems), simply to limit the likelihood of integer overflow with results that could exceed the range of 64-bit unsigned integers. This was a property I observed in my real puzzle input as well, so I took it as a reasonable restriction to place on my generated input as well.
+
+### Scalability, Efficiency, Architecture, and Potential Improvements
+
+The main constraint on the scalability is the RAM required to store the input file, while the design was synthesised with a RAM size that is significantly larger than my puzzle input (and only utilising a small fraction of the available memory bits on my cheap FPGA), scaling to arbitrary sizes still becomes infeasible.
+
+One potential improvement is the use of wider rams: using wider words (e.g., 32-bits or 64-bits) could allow processing multiple columns per cycle, or even just reducing the number of required RAM reads, both of which would significantly reduce the number of clock cycles required.
 
 ### Key Synthesis Metrics:
 
