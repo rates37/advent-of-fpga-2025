@@ -1,6 +1,7 @@
 #!/user/bin/python3
 import random
 import math
+import string
 import functools as ft
 
 DEFAULT_SEED = sum(ord(c) for c in "Advent of FPGA")
@@ -608,5 +609,119 @@ def gen_day07(
     return part1_answer, total_timelines
 
 
+def gen_day11(
+    n: int, output_filename: str, seed: int = DEFAULT_SEED
+) -> tuple[int, int]:
+    # n = number of nodes in the graph
+    # output_filename = self explanatory
+    # returns two ints: (part1_answer, part2_answer)
+    random.seed(seed)
+
+    # set min nodes to at least 10
+    if n < 15:
+        print(f"warning: using n={n} is too low for number of nodes, defaulting to 15")
+        n = 15
+
+    fixed_nodes = {"you", "svr", "out", "dac", "fft"}
+
+    def get_random_name():
+        return "".join(random.choices(string.ascii_lowercase, k=3))
+
+    all_names = set(fixed_nodes)
+    while len(all_names) < n:
+        all_names.add(get_random_name())
+    fillers = list(all_names - fixed_nodes)
+    random.shuffle(fillers)
+
+    specials = ["dac", "fft"]
+    random.shuffle(specials)
+    s1, s2 = specials
+
+    # insert svr and you early, and s1/2 near the middle, and out near the end
+    node_list = (
+        [None] * n
+    )  # this list will be a topological ordering, edges only go from nodes i->j where i < j to ensure DAG
+    svr_idx = random.randint(0, n // 10)
+    out_idx = random.randint((n * 3) // 4, (n * 9) // 10)
+    span = out_idx - svr_idx
+    s1_idx = svr_idx + (span // 3) + random.randint(-1, 1)
+    s2_idx = svr_idx + (2 * span // 3) + random.randint(-1, 1)
+    reserved_indices = {svr_idx, out_idx, s1_idx, s2_idx}
+    you_idx = random.choice([i for i in range(out_idx) if i not in reserved_indices])
+    reserved_indices.add(you_idx)
+
+    # place nodes in list:
+    node_list[svr_idx] = "svr"
+    node_list[out_idx] = "out"
+    node_list[s1_idx] = s1
+    node_list[s2_idx] = s2
+    node_list[you_idx] = "you"
+
+    # fill remaining places:
+    filler_idx = 0
+    for i in range(n):
+        if node_list[i] is None:
+            node_list[i] = fillers[filler_idx]
+            filler_idx += 1
+
+    # graph:
+    adj = {name: [] for name in node_list}
+
+    def add_edge(u, v):
+        if v not in adj[u]:
+            adj[u].append(v)
+
+    # add minimal path so that solutions are non zero (not really necessary)
+    add_edge("svr", s1)
+    add_edge(s1, s2)
+    add_edge(s2, "out")
+    add_edge("you", "out")
+
+    for i, u in enumerate(node_list):
+        possible_targets = node_list[i + 1 :]
+        if not possible_targets:
+            continue
+        num_cables = random.choice(list(range(1, 17)))  # limit out degree to 16
+        targets = random.sample(
+            possible_targets, k=min(num_cables, len(possible_targets))
+        )
+        for v in targets:
+            add_edge(u, v)
+
+    # generate solution:
+    memo = {}  # map from (current, target) tuple to num of paths from curr to target
+
+    def count_paths(curr, target):
+        if curr == target:
+            return 1
+        state = (curr, target)
+        if state in memo:
+            return memo[state]
+
+        total = 0
+        for n in adj[curr]:
+            total += count_paths(n, target)
+        memo[state] = total
+        return total
+
+    part1_answer = count_paths("you", "out")
+    path1 = count_paths("svr", s1)
+    path2 = count_paths(s1, s2)
+    path3 = count_paths(s2, "out")
+    part2_answer = path1 * path2 * path3
+
+    # write output file:
+    with open(output_filename, "w") as f:
+        output_keys = list(adj.keys())
+        random.shuffle(output_keys)
+
+        for k in output_keys:
+            neighbours = adj[k]
+            if neighbours:
+                f.write(f"{k}: {' '.join(neighbours)}\n")
+    return part1_answer, part2_answer
+
+
 if __name__ == "__main__":
-    print(gen_day07(142, "day07-142.txt", 42))
+    # print(gen_day07(142, "day07-142.txt", 42))
+    print(gen_day11(20, "day11-20.txt"))
