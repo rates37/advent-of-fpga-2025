@@ -553,6 +553,18 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 Writeup coming soon
 
+### Key Synthesis Metrics:
+
+The design was compiled using Quartus Prime Lite 18.1 with the target device as a 10M50DAF484C7G (the FPGA on the DE10-lite dev board) and produced the following key usage metrics:
+
+| Metric                             | Usage                   |
+| ---------------------------------- | ----------------------- |
+| Logic Elements                     | 12,767 / 49,760 (26%)   |
+| Registers                          | 5500                    |
+| Memory Bits                        | 55,808 / 1,677,312 (3%) |
+| Embedded Multiplier 9-bit elements | 9 / 288 (3%)            |
+| Restricted Fmax (Slow 1200mV 85C)  | 41.18 MHz               |
+
 ## Day 10:
 
 Currently unsolved
