@@ -3,7 +3,9 @@ VVP := vvp
 
 SRCS := day09_tb.v \
 		day09_core.v \
-		../utils/rom.v
+		pipeline_stage.v \
+		../utils/rom.v \
+		../utils/ram.v
 
 OUT := day09_tb.out
 
