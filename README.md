@@ -599,7 +599,62 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 ## Day 7:
 
-Writeup coming soon
+Day 7's puzzle was about simulating a tachyon beam traveling through a "tachyon manifold" grid. The beam enters the grid in the top row at a position marked "S" and travels directly downwards, until it hits a non-empty, splitter cell, (marked with a "^" character). When the beam hits a splitter, it stops, and emits news beam in the columns to the left and right of the current column.
+
+Part 1 asks for the total number of splitters that are hit by a beam. Part 2 takes a "many worlds" view on the simulation, and each time a beam hits a splitter, it considers two separate timelines to have been created (one where it went in the left column, and one where it went in the right column). The part 2 answer is the total number of timelines after the beams pass through the bottom row.
+
+### Implementation
+
+Rather than tracking / simulating timelines individually, we can reduce this to a dynamic programming / counting problem - each splitter that the beam passes through will double the number of timelines from that point onwards.
+
+If we define the value a cell in the DP / memoisation table as:
+
+$\texttt{memo[r][c]}:= \text{Number of timelines that end up with a beam passing through this cell}$
+
+We can then use the following pseudo-code / algorithm to fill out the DP table:
+
+```
+startPos = grid[0].indexof('S')
+memo = [[0...]...] // initially all zeros
+memo[0][startPos] = 1
+
+For every cell (r,c) with memo[r][c] > 0, update row r+1 as:
+
+if grid[r][c] == '.': // empty
+    memo[r+1][c] += memo[r][c]
+
+else if grid[r][c] == '^': // splitter
+    memo[r+1][c+1] += memo[r][c]
+    memo[r+1][c-1] += memo[r][c]
+```
+
+In practice, since we only ever need the previous row of timeline counts to compute the next row, we only need to store two rows in memory. In my implementation, I used a double-buffered approach; each row, read from one ram (RAM A) and write to the other (RAM B), then once the current row is finished, swap (now we read from RAM B and write to RAM A).
+
+Since we only need to consider a single row of the input, and the input file is only '^' and '.' characters (aside from the starting position in the first row), each row can be loaded in and stored as a bitmap representation (0 = empty, 1 = splitter). So the FSM alternates between reading in a row and processing/computing the next row of the DP table over and over until the end of the input file has been reached.
+
+A single RAM with the size of two rows of the DP table is used, and the memory layout uses the first `ROW_LEN` entries to store one row, and the remainder of the RAM to store the other row. A flag `current_ram_sel` is used as a flag to alternate between the two regions of the RAM memory, as shown in the snippet below:
+
+```verilog
+// Address calculation for double-buffered RAM
+wire [ADDR_BITS-1:0] read_buf_base = current_ram_sel ? MAX_WIDTH : 0;
+wire [ADDR_BITS-1:0] write_buf_base = current_ram_sel ? 0 : MAX_WIDTH;
+```
+
+Since each row is read in, and then used to compute the next row of timeline counts (DP table), the performance is expected to align closely with the number of characters in the input (as each row is effectively being read in once and traversed once).
+
+### Scalability
+
+Since only two rows of the DP table need to be stored, this design is quite scalable, and can be made bigger or smaller by changing the `MAX_WIDTH` parameter in the `day07_core` module. By storing the current row of the input grid as a bitmap, it is also quite compact and thus can scale quite well before logic usage on the FPGA becomes a limiting factor.
+
+### Benchmarking and Evaluation
+
+My day 7 solution was benchmarked similarly to previous days. It was evaluated over an average/stdev of 5 runs. Tested with varying the dimensions of the input grid from 10x10 to 250x250, with a splitter density of around 25%, and is shown in the plot below. My real puzzle input had a 142x142 grid.
+
+<p align="center">
+<img src="verilog/scripts/benchmarks/day07_benchmark_20251230_203621.png" alt="Plot of clock cycles vs number of math problems" width="720">
+</p>
+
+As seen in the plot, a slight quadratic trend can be seen, which aligns with expectations that performance is proportional to the number of characters in the input file.
 
 ### Key Synthesis Metrics:
 
