@@ -13,8 +13,9 @@ from generate_input import (
     gen_day02,
     gen_day03,
     gen_day04,
-    gen_day07,
     gen_day05,
+    gen_day07,
+    gen_day11,
 )
 from generate_input import gen_day06_4_row as gen_day06
 from typing import Callable, Any, Sequence
@@ -505,6 +506,22 @@ def benchmark_day07(
     )
 
 
+def benchmark_day11(
+    lo: int = 10, hi: int = 250, n: int = 10, repeats: int = 5, timeout: int = 20
+) -> dict:
+    return general_benchmark(
+        lo,
+        hi,
+        n,
+        repeats,
+        timeout,
+        day_dirname="day11_node_lookup",
+        input_generator_function=gen_day11,
+        input_desc="Number of cables",
+        day_name="Day 11",
+    )
+
+
 def benchmark_all() -> None:
     benchmark_day01(lo=10, hi=1000, n=5, repeats=5)
     benchmark_day02(lo=10, hi=100, n=5, repeats=5)
@@ -519,5 +536,6 @@ if __name__ == "__main__":
     # benchmark_day03(lo=10, hi=1000, n=4, repeats=5, timeout=30)
     # benchmark_day07(lo=10, hi=250, n=5, repeats=5, timeout=5)
     # benchmark_day04(lo=10, hi=249, n=4, repeats=5, timeout=30)
-    print(benchmark_day05())
+    # print(benchmark_day05())
+    print(benchmark_day11(20, 750, n=5, repeats=5, timeout=20))
     # benchmark_all()
