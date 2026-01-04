@@ -445,7 +445,7 @@ This process is repeated over and over until no cells are changed after an entir
 
 ### Benchmarking and Evaluation
 
-My day 4 solution was evaluated in a similar manner to previous days. It was similarly evaluated over an average/stdev of 5 runs. Tested with varying the dimensions of the input grid, and randomly generating which cells are paper/empty with a random density in the range 0.45-0.65. My real puzzle input had 137 ranges to evaluate. The plot below evaluates number of ranges between 10 and 250 (a decent amount larger than the real puzzle input).
+My day 4 solution was evaluated in a similar manner to previous days. It was similarly evaluated over an average/stdev of 5 runs. Tested with varying the dimensions of the input grid, and randomly generating which cells are paper/empty with a random density in the range 0.45-0.65. My real puzzle input had a 137x137 grid to evaluate. The plot below evaluates grid sizes between 10^2 and 250^2 (a decent amount larger than the real puzzle input).
 
 <p align="center">
 <img src="verilog/scripts/benchmarks/day04_benchmark_20260104_002835.png" alt="Plot of clock cycles vs input size" width="720">
@@ -487,7 +487,41 @@ Note: The above was compiled with the grid size parameters set to 137x137, since
 
 ## Day 5:
 
-Writeup coming soon
+Day 5's puzzle input was split into two main sections; a series of invalid ID ranges, and a longer selection of individual IDs. Part 1 of the puzzle required you to find the sum of the individual IDs that fall into one of the invalid ID ranges. Part 2 of the puzzle was to find the total number of invalid IDs, which was made slightly more difficult by the fact that some of the invalid IDs in the input may overlap with one another.
+
+### Implementation in Hardware
+
+[My approach](verilog/day05/) to solving this puzzle was to read in the invalid ID ranges, and sort them based on their lower bound. This sorting has two benefits. The first is that now that the ranges are sorted, we can perform an $\mathcal{O}(N)$ operation to merge overlapping IDs with one another. The second benefit is that now, when querying if one of the individual IDs fall into these invalid ranges, we can use binary search to find a containing interval (if it exists), rather than needing to perform a linear search. While linear search is simpler and would require slightly less hardware, the reduced amount of computation required makes binary search more than worth it.
+
+Like day 4, I made use of synchronous RAM modules to store the ranges, which results in increased number of clock cycles required.
+
+Initially, I implemented a bubble sort algorithm to perform sorting, as it was simple to implement, but after getting the module working, I moved to an insertion-sort based algorithm. Despite having the same worst case Big-O complexity, insertion sort has a much better performance in practice than other $\mathcal{O}(n^2)$ sorting algorithms, while still only needing a constant amount of extra space. I did consider implementing more complex sorting algorithms, however seeing that the size of my puzzle input only had 177 invalid ID ranges to sort, I predicted that the performance improvement from other algorithms that might be theoretically much faster would not be worth the effort.
+
+Another benefit of using insertion sort is that it is an online algorithm, meaning it can be performed as the input is being read in, rather than needing to read in the entire input before beginning searching.
+
+### Benchmarking and Evaluation
+
+My day 5 solution was benchmarked similarly to previous days. It was evaluated over an average/stdev of 5 runs. Tested with varying both the number fo invalid input ID ranges, as well as the number of query IDs. My real puzzle input had 177 invalid ID ranges and 1000 IDs to query. The plots below evaluates number of ranges between 10 and 250 (a decent amount larger than the real puzzle input).
+
+<p align="center">
+<img src="verilog/scripts/benchmarks/day05_optimised_vary_num_queries_20260104_021710.png" alt="Plot of clock cycles vs number of query IDs" width="720">
+</p>
+
+<p align="center">
+<img src="verilog/scripts/benchmarks/day05_optimised_vary_num_ranges_20260104_021710.png" alt="Plot of clock cycles vs number of invalid ID ranges" width="720">
+</p>
+
+The shape of the lines on the first plot shows the relationship between number of query IDs and number of clock cycles, and it appears very linear. This is expected, as there is likely very little variance in the number of clock cycles required for each query operation (due to the efficiency of binary search).
+
+The shape of the lines on the second plot shows the relationship between number of invalid ID ranges and number of clock cycles. While there is some gradual change, it doesn't appear quite linear, which is expected, since insertion sort is a quadratic time algorithm. However, since the number of ranges are still so small, the relationship isn't clearly captured by this graph.
+
+### Scalability, Efficiency, Architecture
+
+Since the solver needs to store all ranges, the memory required for this storage becomes the primary constraint on scalability. In my implementation, I stored ranges as 64-bit tuples `(low, high)`. The number of memory bits on the 10M50DAF484C7G (a relatively cheap and small FPGA) is around 1.66 million, allowing for storing over 12,000 ranges, which is orders of magnitude greater than the number required for my input to this puzzle.
+
+One optimisation that could be made is combining the merging process with the insertion process, this could reduce the amount of memory required to store the ranges, as many ranges would likely be combined or completely enveloped by other ranges that have already been read in, thus requiring less memory.
+
+Since the ranges are stored in a synchronous RAM, my design doesn't really allow for much parallelism in terms of processing multiple IDs at once, however since IDs are read in character-by-character, it often takes 13-15 clock cycles to read in each query ID (as often query IDs are over 14 digits long), which given the efficiency of binary search (particularly on arrays of ranges as short as 177), means that sometimes the bottleneck is actually the reading of input, rather than the actual searching process.
 
 ### Key Synthesis Metrics:
 
@@ -500,6 +534,8 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 | Memory Bits                        | 46,080 / 1,677,312 (3%) |
 | Embedded Multiplier 9-bit elements | 0 / 288 (0%)            |
 | Restricted Fmax (Slow 1200mV 85C)  | 90.57 MHz               |
+
+This design achieved a notably higher Fmax that other days so far, which I believe is likely due to the fact that most operations being performed are simple comparisons or memory writes, all of which have very short critical paths, unlike other days where signals must propagate through arithmetic or other complex combinational paths. It was compiled with the `MAX_RANGES` parameter (the parameter that dictates the amount of memory used) set to 180.
 
 ## Day 6:
 

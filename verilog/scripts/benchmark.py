@@ -463,7 +463,7 @@ def benchmark_day05(
     ).tolist()
 
     return benchmark_sweep(
-        day_dirname="day05_optimised",
+        day_dirname="day05",
         day_name="Day 5",
         input_generator_function=gen_day05,
         param_grid={"num_ranges": range_sizes, "num_queries": queries_sizes},

@@ -1,17 +1,16 @@
 IVERILOG := iverilog
 VVP := vvp
 
-SRCS := day05_opt_tb.v \
-		day05_opt_core.v \
-		../utils/rom.v \
-		../utils/ram.v
+SRCS := day05_tb.v \
+		day05_core.v \
+		../utils/rom.v
 
-OUT := day05_opt_tb.out
+OUT := day05_tb.out
 
 # parameters:
 INPUT_FILE ?= input.txt
 
-IVERILOG_PARAMS := -Pday05_opt_tb.INPUT_DATA_FILENAME=\"$(INPUT_FILE)\"
+IVERILOG_PARAMS := -Pday05_tb.INPUT_DATA_FILENAME=\"$(INPUT_FILE)\"
 
 # taegets:
 all: $(OUT)

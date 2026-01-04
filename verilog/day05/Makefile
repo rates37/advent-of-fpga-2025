@@ -3,7 +3,8 @@ VVP := vvp
 
 SRCS := day05_tb.v \
 		day05_core.v \
-		../utils/rom.v
+		../utils/rom.v \
+		../utils/ram.v
 
 OUT := day05_tb.out
 

@@ -18,22 +18,24 @@ module day05_core #(
     output reg done
 );
 
-    // FSM States and State logic
+    // FSM States and State logic (good god this is a big FSM):
     localparam S_IDLE = 0;
 
-    // parsing and sorting:
+    // parsing pipeline:
     localparam S_PARSE_RANGE = 1;
-    localparam S_INSERT_START = 2;
-    localparam S_INSERT_READ = 3;
-    localparam S_INSERT_WAIT = 4;
-    localparam S_INSERT_CHECK = 5;
-    localparam S_INSERT_WRITE_DONE = 6;
+    localparam S_STORE_RANGE = 2;
 
-    // merging:
+    // sorting ranges: // todo: convert range RAM to a shift register that can shift ranges in order to implement optimised insertion sort for online range parsing (rather than parse -> sort as separate stages)
+    localparam S_SORT_PREP = 3;
+    localparam S_SORT_INNER = 4;
+    localparam S_SORT_COMPARE = 5;
+    localparam S_SORT_SWAP = 6;
+
+    // merging ranges:
     localparam S_MERGE_INIT = 7;
-    localparam S_MERGE_READ = 8;
-    localparam S_MERGE_CHECK = 9;
-    localparam S_MERGE_SAVE = 10;
+    localparam S_MERGE_CHECK = 8;
+    localparam S_MERGE_SAVE = 9;
+    localparam S_MERGE_FINALISE = 10;
 
     // parse values:
     localparam S_PARSE_VALUE = 11;
@@ -41,51 +43,26 @@ module day05_core #(
     // searching for values:
     localparam S_SEARCH_INIT = 12;
     localparam S_SEARCH_LOOP = 13;
-    localparam S_SEARCH_WAIT = 14;
-    localparam S_SEARCH_EVAL = 15;
-    localparam S_SEARCH_NEXT = 16; // return to parse value state after this
+    localparam S_SEARCH_EVAL = 14;
+    localparam S_SEARCH_NEXT = 15; // return to parse value state after this
 
-    localparam S_DONE = 17;
+    localparam S_DONE = 16;
     reg [4:0] state;
 
     // !!! RAM:
-    reg r_ram_we;
+    // Range Storage (RAM but implemented within module for simplicity)
+    reg [127:0] range_ram [0:MAX_RANGES-1];
+    reg [127:0] merged_ram [0:MAX_RANGES-1]; // stored as two 64-bit vals (low, high) 
+    
+    // range ram controls:
     reg [LOG2_MAX_RANGES-1:0] r_ram_addr;
-    reg [127:0] r_ram_w_data;
-    wire [127:0] r_ram_r_data;
+    wire [127:0] r_ram_rdata;
+    assign r_ram_rdata = range_ram[r_ram_addr];
 
-    ram #(
-        .WIDTH(128), // 64-bit Start + 64-bit End
-        .DEPTH(MAX_RANGES),
-        .ADDR_BITS(LOG2_MAX_RANGES)
-    ) u_range_ram_0 (
-        .clk(clk),
-        .rst(rst),
-        .we(r_ram_we),
-        .w_addr(r_ram_addr),
-        .w_data(r_ram_w_data),
-        .r_addr(r_ram_addr),
-        .r_data(r_ram_r_data)
-    );
-
-    reg m_ram_we;
+    // merged ram controls:
     reg [LOG2_MAX_RANGES-1:0] m_ram_addr;
-    reg [127:0] m_ram_w_data;
-    wire [127:0] m_ram_r_data;
-    ram #(
-        .WIDTH(128),
-        .DEPTH(MAX_RANGES),
-        .ADDR_BITS(LOG2_MAX_RANGES)
-    ) u_merged_ram_0 (
-        .clk(clk),
-        .rst(rst),
-        .we(m_ram_we),
-        .w_addr(m_ram_addr),
-        .w_data(m_ram_w_data),
-        .r_addr(m_ram_addr),
-        .r_data(m_ram_r_data)
-    );
-
+    wire [127:0] m_ram_rdata;
+    assign m_ram_rdata = merged_ram[m_ram_addr];
 
     // variables/intermediate registers
     reg [63:0] current_num;
@@ -93,27 +70,35 @@ module day05_core #(
     reg [63:0] range_R;
 
     // parsing variables:
+    reg [7:0] char_in;
     reg is_parsing_ranges; // 1 = parsing ranges, 0 = values (for part1 lookup)
     reg is_eof;
     reg has_parsed_digit;
 
-    reg [LOG2_MAX_RANGES:0] num_ranges;
-    reg [LOG2_MAX_RANGES:0] num_merged;
+    reg [LOG2_MAX_RANGES-1:0] num_ranges;
+    reg [LOG2_MAX_RANGES-1:0] num_merged;
 
-    // insertion:
-    reg [LOG2_MAX_RANGES:0] scan_idx;
+    // sorting variables:
+    reg [LOG2_MAX_RANGES-1:0] sort_i;
+    reg [LOG2_MAX_RANGES-1:0] sort_j;
+    reg [127:0] val_A;
+    reg [127:0] val_B;
 
     // merging variables:
-    reg [LOG2_MAX_RANGES:0] merge_idx;
+    reg [LOG2_MAX_RANGES-1:0] merge_idx;
     reg [63:0] curr_start;
     reg [63:0] curr_end;
+    reg [63:0] next_start;
+    reg [63:0] next_end;
 
     // search/lookup variables:
     reg [63:0] search_val;
-    reg [LOG2_MAX_RANGES:0] low;
-    reg [LOG2_MAX_RANGES:0] high; // uses binary search to optimise lookups
+    reg [LOG2_MAX_RANGES-1:0] low;
+    reg [LOG2_MAX_RANGES-1:0] mid;
+    reg [LOG2_MAX_RANGES-1:0] high; // uses binary search to optimise lookups
 
     // logic implementation:
+    // this gonna take a long time
     always @(posedge clk) begin
         if (rst) begin
             state <= S_IDLE;
@@ -127,15 +112,9 @@ module day05_core #(
             is_eof <= 0;
             current_num <= 0;
             has_parsed_digit <= 0;
-            r_ram_we <= 0;
-            m_ram_we <= 0;
             r_ram_addr <= 0;
             m_ram_addr <= 0;
         end else begin
-            // default disable writes
-            r_ram_we <= 0;
-            m_ram_we <= 0;
-
             case (state)
                 S_IDLE: begin
                     state <= S_PARSE_RANGE;
@@ -150,97 +129,98 @@ module day05_core #(
 
                 S_PARSE_RANGE: begin
                     if (rom_valid) begin
+                        char_in = rom_data; 
+
                         // check if numeric char:
-                        if (rom_data >= "0" && rom_data <= "9") begin
-                            current_num <= ((current_num<<3) + (current_num<<1)) + (rom_data - "0");
+                        if (char_in >= "0" && char_in <= "9") begin
+                            current_num <= (current_num*10) + (char_in - "0");
                             has_parsed_digit <= 1;
-                        end else if (rom_data == "-") begin
+                        end else if (char_in == "-") begin
                             range_L <= current_num;
                             current_num <= 0;
                             has_parsed_digit <= 0;
-                        end else if (rom_data == "\n") begin
+                        end else if (char_in == "\n") begin
                             if (has_parsed_digit) begin
                                 range_R <= current_num;
-                                state <= S_INSERT_START;
+                                state <= S_STORE_RANGE;
                             end else begin
                                 // if reach newline without parsing nums, we must've reached the \n\n that separates ranges from IDs
                                 is_parsing_ranges <= 0;
-                                state <= S_MERGE_INIT;
+                                state <= S_SORT_PREP;
                             end
                         end
 
-                        // increment for next character (if not moving to insert)
-                        if (!(rom_data == "\n" && has_parsed_digit)) begin
+                        // increment for next character (if not moving to different state)
+                        if (char_in != "\n" || (char_in == "\n" && !has_parsed_digit)) begin // todo: review this logic something tickles me wrong about it
                                 rom_addr <= rom_addr + 1;
                         end
                     end else begin
                         // reached EOF - shouldn't happen
-                        $display("Input file probably malformed!");
+                        // $display("Input file probably malformed!")
                         state <= S_DONE;
                     end
                 end
 
-                // Insertion sort:
-                S_INSERT_START: begin
-                    if (num_ranges == 0) begin
-                        r_ram_addr <= 0;
-                        r_ram_w_data <= {range_L, range_R};
-                        r_ram_we <= 1;
-                        num_ranges <= 1;
-                        state <= S_INSERT_WRITE_DONE;
-                    end else begin
-                        scan_idx <= num_ranges-1;
-                        state <= S_INSERT_READ;
-                    end
-                end
 
-                S_INSERT_READ: begin
-                    r_ram_addr <= scan_idx;
-                    state <= S_INSERT_WAIT;
-                end
+                S_STORE_RANGE: begin
+                    // write the range to RAM:
+                    range_ram[num_ranges] <= {range_L, range_R};
+                    num_ranges <= num_ranges + 1;
 
-                S_INSERT_WAIT: begin
-                    state <= S_INSERT_CHECK;
-                end
-
-                S_INSERT_CHECK: begin
-                    if (r_ram_r_data[127:64] > range_L) begin
-                        r_ram_addr <= scan_idx + 1;
-                        r_ram_w_data <= r_ram_r_data;
-                        r_ram_we <= 1;
-
-                        if (scan_idx == 0) begin
-                            scan_idx <= {LOG2_MAX_RANGES+1{1'b1}}; // insert -1 here
-                            state <= S_INSERT_WRITE_DONE;
-                        end else begin
-                            scan_idx <= scan_idx - 1;
-                            state <= S_INSERT_READ;
-                        end
-                    end else begin
-                        r_ram_addr <= scan_idx + 1;
-                        r_ram_w_data <= {range_L, range_R};
-                        r_ram_we <= 1;
-                        num_ranges <= num_ranges + 1;
-                        state <= S_INSERT_WRITE_DONE;
-                    end
-                end
-
-                S_INSERT_WRITE_DONE: begin
-                    if (scan_idx[LOG2_MAX_RANGES] == 1) begin // equivalent to checking scan_idx == -1
-                        // if every element from the first position was shifted:
-                        r_ram_addr <= 0;
-                        r_ram_w_data <= {range_L, range_R};
-                        r_ram_we <= 1;
-                        num_ranges <= num_ranges + 1;
-                    end
-
-                    // continue parsing next range:
+                    // reset parsing variables:
                     current_num <= 0;
                     has_parsed_digit <= 0;
+
+                    // continue parsing:
                     rom_addr <= rom_addr + 1;
                     state <= S_PARSE_RANGE;
                 end
 
+                //! ----------------------
+                //! Sorting Ranges Stages:
+                //! ----------------------
+                S_SORT_PREP: begin
+                    if (num_ranges < 2) begin
+                        state <= S_MERGE_INIT;
+                    end else begin
+                        sort_i <= 0;
+                        sort_j <= 0;
+                        state <= S_SORT_INNER;
+                        // $display("Starting sort: %d ranges", num_ranges);
+                    end
+                end
+
+                S_SORT_INNER: begin
+                    if (sort_i >= num_ranges - 1) begin
+                        state <= S_MERGE_INIT;
+                    end else if (sort_j >= num_ranges - 1 - sort_i) begin
+                        sort_i <= sort_i + 1;
+                        sort_j <= 0;
+                        state <= S_SORT_INNER;
+                    end else begin
+                        r_ram_addr <= sort_j;
+                        state <= S_SORT_COMPARE;
+                    end
+                end
+
+                S_SORT_COMPARE: begin
+
+                    if (range_ram[sort_j][127:64] > range_ram[sort_j+1][127:64]) begin
+                        val_A = range_ram[sort_j];
+                        val_B = range_ram[sort_j + 1];
+                        state <= S_SORT_SWAP;
+                    end else begin
+                        sort_j <= sort_j + 1;
+                        state <= S_SORT_INNER;
+                    end
+                end
+
+                S_SORT_SWAP: begin
+                    range_ram[sort_j] <= val_B;
+                    range_ram[sort_j + 1] <= val_A;
+                    sort_j <= sort_j + 1;
+                    state <= S_SORT_INNER;
+                end
 
                 //! ----------------------
                 //! Merging Ranges Stages:
@@ -249,54 +229,45 @@ module day05_core #(
                     merge_idx <= 0;
                     num_merged <= 0;
                     part2_result <= 0;
-                    r_ram_addr <= 0;
-                    state <= S_MERGE_READ;
-                end
-
-                S_MERGE_READ: begin
                     state <= S_MERGE_CHECK;
                 end
 
                 S_MERGE_CHECK: begin
                     if (merge_idx == 0) begin
-                        curr_start <= r_ram_r_data[127:64];
-                        curr_end <= r_ram_r_data[63:0];
+                        curr_start <= range_ram[0][127:64];
+                        curr_end <= range_ram[0][63:0];
                         merge_idx <= 1;
-                        r_ram_addr <= 1;
-                        state <= S_MERGE_READ;
-                    end else begin
-                        if (r_ram_r_data[127:64] <= curr_end + 1) begin
-                            if (r_ram_r_data[63:0] > curr_end) begin
-                                curr_end <= r_ram_r_data[63:0];
+                    end else if (merge_idx < num_ranges) begin
+                        if (range_ram[merge_idx][127:64] <= curr_end + 1) begin
+                            if (range_ram[merge_idx][63:0] > curr_end) begin
+                                curr_end <= range_ram[merge_idx][63:0];
                             end
-                        end else begin
-                            m_ram_addr <= num_merged;
-                            m_ram_w_data <= {curr_start, curr_end};
-                            m_ram_we <= 1;
-                            num_merged <= num_merged + 1;
-                            part2_result <= part2_result + (curr_end - curr_start + 1);
-
-                            curr_start <= r_ram_r_data[127:64];
-                            curr_end <= r_ram_r_data[63:0];
-
-                        end
-                        if (merge_idx + 1 < num_ranges) begin
                             merge_idx <= merge_idx + 1;
-                            r_ram_addr <= merge_idx + 1;
-                            state <= S_MERGE_READ;
                         end else begin
                             state <= S_MERGE_SAVE;
                         end
+                    end else begin
+                        state <= S_MERGE_FINALISE;
                     end
                 end
 
                 S_MERGE_SAVE: begin
-                    m_ram_addr <= num_merged;
-                    m_ram_w_data <= {curr_start, curr_end};
-                    m_ram_we <= 1;
+                    merged_ram[num_merged] <= {curr_start, curr_end};
+                    num_merged <= num_merged + 1;
+                    part2_result <= part2_result + (curr_end - curr_start + 1);
+                    curr_start <= range_ram[merge_idx][127:64]; 
+                    curr_end <= range_ram[merge_idx][63:0];
+                    merge_idx <= merge_idx + 1;
+                    state <= S_MERGE_CHECK;
+                end
+
+                S_MERGE_FINALISE: begin
+                    // save the final range:
+                    merged_ram[num_merged] <= {curr_start, curr_end};
                     num_merged <= num_merged + 1;
                     part2_result <= part2_result + (curr_end - curr_start + 1);
 
+                    // transition to parsing values stage:
                     current_num <= 0;
                     has_parsed_digit <= 0;
                     rom_addr <= rom_addr + 1;
@@ -309,20 +280,21 @@ module day05_core #(
                 //! ------------------------------------
                 S_PARSE_VALUE: begin
                     if (rom_valid) begin
-                        if (rom_data >= "0" && rom_data <= "9") begin
-                            current_num <= ((current_num<<3) + (current_num<<1)) + (rom_data - "0");
+                        char_in = rom_data;
+
+                        if (char_in >= "0" && char_in <= "9") begin
+                            current_num <= (current_num * 10) + (char_in - "0");
                             has_parsed_digit <= 1;
-                        end else if (rom_data == "\n") begin
+                        end else if (char_in == "\n") begin
                             if (has_parsed_digit) begin
                                 search_val <= current_num;
                                 state <= S_SEARCH_INIT;
                             end
                             // ignore empty lines / training newlines
                         end
+
                         // advance rom address
-                        if (!(rom_data == 10 && has_parsed_digit)) begin
-                            rom_addr <= rom_addr + 1;
-                        end
+                        rom_addr <= rom_addr + 1;
                     end else begin
                         // reached EOF, check final ID:
                         if (has_parsed_digit) begin
@@ -346,20 +318,18 @@ module day05_core #(
                     if (low > high) begin
                         state <= S_SEARCH_NEXT;
                     end else begin
-                        m_ram_addr <= low + ((high-low) >> 1);
-                        state <= S_SEARCH_WAIT;
+                        m_ram_addr <= low + (high-low) / 2;
+                        state <= S_SEARCH_EVAL;
                     end
-                end
 
-                S_SEARCH_WAIT: begin
-                    state <= S_SEARCH_EVAL;
                 end
 
                 S_SEARCH_EVAL: begin
-                    if (search_val >= m_ram_r_data[127:64] && search_val <= m_ram_r_data[63:0]) begin
+                    mid <= m_ram_addr;
+                    if (search_val >= m_ram_rdata[127:64] && search_val <= m_ram_rdata[63:0]) begin
                         part1_result <= part1_result + 1;
                         state <= S_SEARCH_NEXT;
-                    end else if (search_val < m_ram_r_data[127:64]) begin
+                    end else if (search_val < m_ram_rdata[127:64]) begin
                         if (m_ram_addr == 0) begin
                             state <= S_SEARCH_NEXT;
                         end else begin
@@ -380,7 +350,6 @@ module day05_core #(
                         state <= S_DONE;
                     end else begin
                         state <= S_PARSE_VALUE;
-                        rom_addr <= rom_addr + 1;
                     end
                 end
 

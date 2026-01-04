@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module day05_opt_tb;
+module day05_tb;
 
     // parameters:
     parameter N_ADDR_BITS = 16;
@@ -53,7 +53,7 @@ module day05_opt_tb;
     );
 
     // instantiate synthesisable 'day05_core' module:
-    day05_opt_core #(
+    day05_core #(
         .N_ADDR_BITS(N_ADDR_BITS)
     ) u_core_0 (
         .clk(clk),
