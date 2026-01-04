@@ -574,7 +574,7 @@ Since this approach requires a single linear scan over all rows, it's performanc
 My day 6 solution was benchmarked similarly to previous days. It was evaluated over an average/stdev of 5 runs. Tested with varying the number of math problems from 10 to 1000, using numbers up to four digits, and is shown in the plot below. My real puzzle input had 1000 math problems and numbers up to three digits.
 
 <p align="center">
-<img src="/Users/satya/Developer/advent-of-fpga-2025/verilog/scripts/benchmarks/day06_benchmark_20251230_201322.png" alt="Plot of clock cycles vs number of math problems" width="720">
+<img src="verilog/scripts/benchmarks/day06_benchmark_20251230_201322.png" alt="Plot of clock cycles vs number of math problems" width="720">
 </p>
 
 Note: in generating inputs, I limited the value of the number to be smaller for multiplication math problems (3 digits for multiplication problems, vs 4 digits for addition problems), simply to limit the likelihood of integer overflow with results that could exceed the range of 64-bit unsigned integers. This was a property I observed in my real puzzle input as well, so I took it as a reasonable restriction to place on my generated input as well.
