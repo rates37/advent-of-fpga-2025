@@ -517,6 +517,7 @@ def gen_day06(
 
     return part1(lines), part2(lines)
 
+
 def gen_day06_4_row(
     n: int, output_filename: str, seed: int = DEFAULT_SEED
 ) -> tuple[int, int]:
@@ -533,72 +534,72 @@ def gen_day07(
     # output_filename = self explanatory
     # returns two ints: (part1_answer, part2_answer)
     random.seed(seed)
-    
+
     # generate input
     n = max(n, 5)
     w = h = n
-    
-    grid = [['.' for _ in range(w)] for _ in range(h)]
-    
+
+    grid = [["." for _ in range(w)] for _ in range(h)]
+
     # put initial position in middle of first row
     start_col = w // 2
-    grid[0][start_col] = 'S'
-    
+    grid[0][start_col] = "S"
+
     # add splitters
     for r in range(1, h):
         for c in range(w):
-            if random.random() < 0.25: # seems to give a good balance
-                grid[r][c] = '^'
-                
+            if random.random() < 0.25:  # seems to give a good balance
+                grid[r][c] = "^"
+
     # Write the grid to the output file
-    with open(output_filename, 'w') as f:
+    with open(output_filename, "w") as f:
         for row in grid:
             f.write("".join(row) + "\n")
-            
+
     # --- 2. Solve Part 1 (Boolean Reachability) ---
     # We need to count how many unique splitters are hit.
     # We merge beams that land on the same spot (using a set).
-    
+
     splitters_hit = set()
     active_cols = {start_col}
-    
+
     # part 1:
     for r in range(h):
         next_active = set()
         for c in active_cols:
             if c < 0 or c >= w:
                 continue
-            
-            if grid[r][c] == '^':
+
+            if grid[r][c] == "^":
                 splitters_hit.add((r, c))
                 next_active.add(c - 1)
                 next_active.add(c + 1)
             else:
                 next_active.add(c)
-        
+
         active_cols = next_active
         if not active_cols:
             break
-            
+
     part1_answer = len(splitters_hit)
-    
+
     # part 2:
     current_counts = {start_col: 1}
     total_timelines = 0
-    
+
     for r in range(h):
         next_counts = {}
         for c, count in current_counts.items():
             if c < 0 or c >= w:
                 total_timelines += count
                 continue
-            
-            if grid[r][c] == '^':
+
+            if grid[r][c] == "^":
                 next_counts[c - 1] = next_counts.get(c - 1, 0) + count
                 next_counts[c + 1] = next_counts.get(c + 1, 0) + count
             else:
                 next_counts[c] = next_counts.get(c, 0) + count
-                
+
         current_counts = next_counts
         if not current_counts:
             break

@@ -152,7 +152,7 @@ In the plot below, clock cycles were measured over an average of 5 trials per in
 <img src="verilog/scripts/benchmarks/day01_benchmark_20251229_172930.png" alt="Plot of clock cycles vs input size" width="720">
 </p>
 
-As expected, the number of clock cycles required scales linearly with the number of rotations in the input file.
+As expected, the number of clock cycles required scales linearly with the number of rotations in the input file, and since reading input is the bottleneck of this system, there is little to no variance in the number of clock cycles taken for a given input size.
 
 ### Scalability, Efficiency, and Architecture
 
@@ -396,7 +396,7 @@ As the logic to evaluate a single line takes a constant number of clock cycles, 
 
 Since the solver only needs to read in 1 (or 2) lines at a time, the number of banks (rows) in the input file can be arbitrarily increased without the design needing to change.
 
-To handle longer input rows (more characters per line), the `MAX_LINE_LEN` parameter in the `day03_core` module can be increased and the logic usage will grow accordingly. My puzzle input only had 100 characters per line and so this was what I tested/benchmarked with. Architecture and efficiency has been discussed above.
+To handle longer input rows (more characters per line), the `MAX_LINE_LEN` parameter in the `day03_core` module can be increased and the logic usage will grow accordingly. My puzzle input only had 100 characters per line and so this was what I tested synthesis with (results below). Architecture and efficiency has been discussed above.
 
 ### Key Synthesis Metrics:
 
@@ -412,7 +412,7 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 ## Day 4:
 
-Day 4's puzzle was a grid-based problem. The puzzle input was a sqaure grid of '.' and '@' characters, representing empty squares and rolls of paper. A roll of paper is 'accessible' by the elves' fork-lift if it has less than 4 rolls of paper in the surrounding 8 positions (up, down, left, right, and the four diagonals). The aim of part 1 of this puzzle is to count the number of accessible rolls of paper in the input grid. Part 2 of this puzzle was to remove the accessible rolls repeatedly, until there are no more accessible rolls in the grid.
+Day 4's puzzle was a grid-based problem. The puzzle input was a square grid of '.' and '@' characters, representing empty squares and rolls of paper. A roll of paper is 'accessible' by the elves' fork-lift if it has less than 4 rolls of paper in the surrounding 8 positions (up, down, left, right, and the four diagonals). The aim of part 1 of this puzzle is to count the number of accessible rolls of paper in the input grid. Part 2 of this puzzle was to remove the accessible rolls repeatedly, until there are no more accessible rolls in the grid.
 
 Day 4's puzzle didn't have much challenging regarding understanding the solution, as it is a relatively simple approach of iteratively traversing the grid, row-by-row, counting accessible cells (storing the count on the first iteration for part 1 result), and updating the grid cells.
 
@@ -661,7 +661,6 @@ Hardcaml - to learn something new!
 - [ ] Check todos in completed days to resolve issues, add documentation, etc.
 - [ ] Document the hell out of the interesting days:
 
-  - day 5 insertion sort
   - day 8 no requirement for N^2 memory usage, bitonic sort
   - day 9 pipeline to make part 2 N^2 ammortised
   - day 11 CSR graph representation
