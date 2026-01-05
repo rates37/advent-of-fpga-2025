@@ -21,7 +21,7 @@ The table below summarises which problems have been successfully solved, the HDL
 | 8   | Verilog                        | 3342930\*    | 1000 x,y,z coordinates                               |
 | 9   | Verilog                        | 1341548      | 496 coordinates                                      |
 | 10  | Not yet                        |              |                                                      |
-| 11  | Verilog                        | 85076        | 583 device names                                     |
+| 11  | Verilog                        | 66542        | 583 device names                                     |
 | 12  | Not yet                        |              |                                                      |
 
 \* Day 8's solution not guaranteed to produce correct results. However it is overwhelmingly likely to produce correct results on typical puzzle inputs. Refer to the day 8 section below for details.
@@ -708,7 +708,137 @@ Currently unsolved
 
 ## Day 11:
 
-Writeup coming soon
+Day 11's puzzle was about finding the number of paths through a mess of wires on a server rack. The input contains a list of devices, and for each device, the other devices that this device is directly connected to. We can model this as a path-counting problem in an acyclic graph.
+
+Part 1 of the puzzle was to count all distinct paths from the device named `you` to the device named `out`.
+
+Path 2 of the puzzle was to count all distinct paths from the device `svr` to the device named `out` that visit both `dac` and `fft` (in any order).
+
+### Core algorithm / approach taken
+
+The core algorithm I used was a memoised depth-first search (DFS), which is virtually equivalent to a dynamic programming problem on the graph's topological order.
+
+We can define for any two nodes $u$ and $v$:
+
+$$
+\text{paths}(s,t) = \begin{cases} 1 & \text{if } s = t \\ \sum_{v \in \text{neighbours}(s)} \text{paths}(v, t) & \text{otherwise} \end{cases}
+$$
+
+It is critical to memoise (store results of subproblems) for this problem, as without it, the recursion would revisit the same subproblems exponentially. With memoisation, each node is computed exactly once (provided it is even reachable from the start node), yielding an $\mathcal{O}(V + E)$ time complexity.
+
+#### Path 2 Decomposition:
+
+Part 2 requires paths through both `dac` and `fft` between `svr` and `out`. Rather than tracking the visited state during traversal, we can instead decompose this into independent path counts (as this has less strain on memory usage):
+
+$$
+\text{Part 2 answer} = \text{paths}(\texttt{svr} \to \texttt{dac}) \times \text{paths}(\texttt{dac} \to \texttt{fft}) \times \text{paths}(\texttt{fft} \to \texttt{out}) \\ + \text{paths}(\texttt{svr} \to \texttt{fft}) \times \text{paths}(\texttt{fft} \to \texttt{dac}) \times \text{paths}(\texttt{dac} \to \texttt{out})
+$$
+
+This allows us to reuse the exact same function from part 1, and the only change is simply changing the start and end nodes, to compute each sub-path.
+
+#### Early Termination Condition
+
+Since the input given is a directed acyclic graph (DAG), the following statement **must** hold true (otherwise it would violate the properties of a DAG):
+
+Exactly one of $\text{paths}(\texttt{fft} \to \texttt{dac})$ or $\text{paths}(\texttt{dac} \to \texttt{fft})$ must be zero.
+
+If both were non-zero, then there would be a cycle through `fft` and `dac`, which would mean the graph is no longer acyclic.
+
+This property allows us to terminate early; when computing part 2, first check the number of paths from `dac` to `fft`. If this number is zero, then we know that there are no paths that follow `svr -> dac -> fft -> out`, and so don't need to compute any of the sub-paths `svr -> fft` or `dac -> out`. Conversely, if the number of paths from `dac` to `fft` is non-zero, then we know that we don't need to compute any of the sub-paths along `svr -> dac -> fft -> out`. This means that we only need to call the $\text{paths}$ function either 3 or 4 times to calculate part 2's result (instead of the 6 times without this optimisation). On average, this reduces part 2's computation by 33-50%, which is a significant margin.
+
+### Implementation in Hardware
+
+Since this solution is very software-y, it is quite complex to implement in plain HDL. To help with this, I decomposed the solution into four main modules (along with a series of RAM modules to store graph data).
+
+#### Name Resolver
+
+This module is used to convert 3-character ASCII names into unique 10-bit node IDs using a perfect hash function:
+
+$$
+\text{hash}(\texttt{abc}) = a \times 676 + b \times 26 + c
+$$
+
+Where $a$, $b$, and $c$ are interpreted as a number from 0 to 25 (their position in the alphabet). This maps the $26^3 = 17,576$ possible names (`aaa` to `zzz`) to unique memory addresses, eliminating the need for collision handling.
+
+Note: the 10-bits for ID is chosen as I set the max number of nodes supported to 1024. If the max nodes parameter is increased, then the width of the 10-bit node ID would also need to increase.
+
+This hash table requires 17,576 10-bit entries, which is a large overhead for small graphs, however given the $\mathcal{O}(1)$ lookup times, it is an acceptable trade-off. If the input node set was known to be significantly small, a collision-handling hash approach would reduce the memory requirements, at the cost of additional clock cycles and logic usage to handle collisions.
+
+#### Graph Manager
+
+This module stores the graph in **compressed sparse row (CSR)** format. CSR format is essentially a dense array of edges, where edges leaving the same node are adjacent in the array. This approach is used, as this way, the outgoing neighbours of each node can be identified by simply mapping node ID to the start index of outgoing edges within the array of edges.
+
+This approach was chosen over an adjacency list style 2D array, as the number of outgoing edges from each node varies, and thus using a 2D matrix would waste space in memory.
+
+The diagram below shows the two "arrays" (RAMs in the case of my implementation) that this graph manager class needs to store:
+
+<p align="center">
+<img src="docs/img/graph_manager_csr_diagram.png" alt="Diagram of graph manager's CSR graph representation" width="720">
+</p>
+
+The fields stored in the left for each node are:
+
+- `head` - the starting index in the edge array
+- `count` - the number of outgoing edges from the current node
+
+On the right, each entry simply stores a 10-bit node index representing the destination of that edge.
+
+I have not identified a notable drawback to the choice of graph representation here. CSR is memory efficient and dense, but requires $\mathcal{O}(\text{degree})$ time to iterate over edges (as opposed to an $\mathcal{O}(1)$ lookup time for an adjacency matrix), but since we don't need to check for edge existence in this problem (we only need to traverse adjacent edges), this 'drawback' does not affect the quality/performance of solution here.
+
+#### Path Counter:
+
+Implements a non-recursive DFS using a LIFO stack memory and memoisation table (stored in a RAM). This module gets used to compute both part 1 and 2 answers after the graph has been read into the graph manager.
+
+Each stack frame contains the following data:
+
+| Field        | Width   | Description                                     |
+| ------------ | ------- | ----------------------------------------------- |
+| `node`       | 10 bits | Current node ID                                 |
+| `edge_start` | 13 bits | Starting edge index                             |
+| `edge_count` | 5 bits  | Total number of nodes this node is connected to |
+| `edge_idx`   | 5 bits  | Current neighbour index                         |
+| `sum`        | 64 bits | Accumulated path count                          |
+
+In its current state, the maximum stack depth is only set to 64, which saves a lot on registers, but means that technically, this approach could produce incorrect results for some edge case graphs. However, this module was tested repeatedly with randomly generated graphs of size up to 750 nodes, and this was not an issue that was encountered at all (although it is still important to acknowledge the drawback's existence).
+
+The memoisation table is implemented as (yet another) RAM, storing 64-bit values. However, since the path counter module will be utilised multiple times, this RAM would ordinarily require resetting. However, since the memo table needs to store entires for every possible destination node, this clearing operation would become quite inefficient.
+
+To overcome this, I create an additional bit vector to store 'valid' indicators for each index in the RAM. This way, rather than "resetting" the RAM contents, it can simply be marked all as invalid, with a single operation. Using registers for this validity bit array is essential, as if RAM/memory blocks were used, then they would need to be sequentially cleared (as opposed to how registers can be cleared in parallel, in a single clock cycle).
+
+#### Diagram of Connections Between Modules and Flow of Data:
+
+<p align="center">
+<img src="docs/img/day11_high_level_layout.png" alt="A high-level layout of the links between submodules for day 11 solution" width="720">
+</p>
+
+### Scalability, Improvements, Architecture
+
+The current design is not pipelined, as each memory access stalls the FSM. This was done simply to save time during development. Possible improvements could include:
+
+- pre-fetching data, i.e., it is fetched while performing computations, as opposed to completing computation and fetching afterward
+
+- parallel memo check, could read the memo synchronous RAM speculatively before/during confirming the validity in the bit vector. This would save a clock cycle while checking validity, and then based on validity, the result can either be returned (if the data is valid), or the actual result can be computed (if the data is not valid).
+
+In its current implementation (and the implementation that was used for benchmarking and synthesis), the following parameters were set. With each one, the impose slightly different restrictions on the scalability of the design. However, they can all be easily increased (this would just require the use of more logic cells, memory blocks, etc.)
+
+| Parameter         | Currently set to      |
+| ----------------- | --------------------- |
+| `MAX_NODES`       | 1024                  |
+| `MAX_EDGES`       | 8192                  |
+| `MAX_STACK_DEPTH` | 64                    |
+| Path count        | Uses a 64-bit integer |
+
+For graphs that are known to have longer paths (i.e., longer than the stack depth), the stack depth would need to be increased. In theory, the worst-case stack depth is be equal to the number of nodes in the graph - 1, however in practice with randomly generated graphs (and the graph I got as a puzzle input), a stack depth of 64 seems to be sufficient.
+
+### Benchmarking and Evaluation
+
+My day 11 solution was benchmarked similarly to previous days. It was evaluated over an average/stdev of 5 runs. Tested with varying the number of nodes in the graph, with an out-degree of each node as a randomly generated number between 1 and 16. The number of nodes was varied from 20 to 750. My real puzzle input had 583 nodes.
+
+<p align="center">
+<img src="verilog/scripts/benchmarks/day11_node_lookup_benchmark_20260105_201542.png" alt="Plot of clock cycles vs number of math problems" width="720">
+</p>
+
+As seen in the plot, an approximate linear trend can be seen to exist, which aligns with expectations that performance is $\mathcal{O}(V + E)$ - i.e., approximately linear with respect to the number of nodes in the input graph.
 
 ### Key Synthesis Metrics:
 
