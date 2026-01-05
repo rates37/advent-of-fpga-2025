@@ -382,7 +382,7 @@
         <mxCell id="SlnLpKovAYFrYRIt85k_-15" edge="1" parent="1" source="SlnLpKovAYFrYRIt85k_-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;dashed=1;" target="SlnLpKovAYFrYRIt85k_-14">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="SlnLpKovAYFrYRIt85k_-16" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=13;" value="$$\text{Edge 5: dst node }$$" vertex="1">
+        <mxCell id="SlnLpKovAYFrYRIt85k_-16" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=13;" value="$$\text{Edge 4: dst node }$$" vertex="1">
           <mxGeometry height="40" width="170" x="495" y="290" as="geometry" />
         </mxCell>
         <mxCell id="SlnLpKovAYFrYRIt85k_-17" edge="1" parent="1" source="SlnLpKovAYFrYRIt85k_-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;dashed=1;" target="SlnLpKovAYFrYRIt85k_-12">
