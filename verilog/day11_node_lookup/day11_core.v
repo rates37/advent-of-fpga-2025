@@ -94,8 +94,7 @@ module day11_core #(
     localparam S_P2B_3_START = 20;
     localparam S_P2B_3_WAIT = 21;
 
-    localparam S_CALC_RESULTS = 22;
-    localparam S_DONE = 23;
+    localparam S_DONE = 22;
     reg [4:0] state;
 
     reg [63:0] p2_acc [0:1]; // path 1 (svr -> dac -> fft -> out) and path 2 (svr -> fft -> dac -> out)
@@ -282,10 +281,10 @@ module day11_core #(
                 end
 
                 // SOLVING PART 2:
-                // P2A: solve paths from svr -> dac
+                // P2A: solve paths from dac -> fft
                 S_P2A_1_SETUP: begin
-                    pc_s <= ids[2]; // svr
-                    pc_t <= ids[3]; // dac
+                    pc_s <= ids[3]; // dac
+                    pc_t <= ids[4]; // fft
                     state <= S_P2A_1_START;
                 end
 
@@ -299,15 +298,21 @@ module day11_core #(
                 S_P2A_1_WAIT: begin
                     // wait until path counter finished dfs'ing:
                     if (pc_done) begin
-                        p2_acc[0] <= pc_result;
-                        state <= S_P2A_2_SETUP;
+                        // if no paths from dac -> fft, then there does not exist a path svr -> dac -> fft -> out, so skip rest of this subsequence
+                        if (pc_result == 0) begin
+                            p2_acc[0] <= 0;
+                            state <= S_P2B_1_SETUP;
+                        end else begin
+                            p2_acc[0] <= pc_result;
+                            state <= S_P2A_2_SETUP;
+                        end
                     end
                 end
 
-                // P2A: solve paths from dac -> fft
+                // P2A: solve paths from svr -> dac (only if there exists a path dac -> fft)
                 S_P2A_2_SETUP: begin
-                    pc_s <= ids[3]; // dac
-                    pc_t <= ids[4]; // fft
+                    pc_s <= ids[2]; // svr
+                    pc_t <= ids[3]; // dac
                     state <= S_P2A_2_START;
                 end
 
@@ -342,7 +347,8 @@ module day11_core #(
                 S_P2A_3_WAIT: begin
                     if (pc_done) begin
                         p2_acc[0] <= p2_acc[0] * pc_result;
-                        state <= S_P2B_1_SETUP;
+                        part2_result <= p2_acc[0] * pc_result;; // no paths exist svr -> fft -> dac -> out, just output this number
+                        state <= S_DONE;
                     end
                 end
 
@@ -405,15 +411,9 @@ module day11_core #(
                 S_P2B_3_WAIT: begin
                     if (pc_done) begin
                         p2_acc[1] <= p2_acc[1] * pc_result;
-                        state <= S_CALC_RESULTS;
+                        part2_result <= p2_acc[1] * pc_result;
+                        state <= S_DONE;
                     end
-                end
-
-
-                S_CALC_RESULTS: begin
-                    part2_result <= p2_acc[0] + p2_acc[1];
-                    done <= 1;
-                    state <= S_DONE;
                 end
 
 
