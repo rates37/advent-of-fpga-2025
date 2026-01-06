@@ -12,7 +12,7 @@ The table below summarises which problems have been successfully solved, the HDL
 | Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                           |
 | --- | ------------------------------ | ------------ | ---------------------------------------------------- |
 | 1   | Both                           | 19691        | 4780 rotations                                       |
-| 2   | Verilog                        | 1729         | 38 ranges                                            |
+| 2   | Both                           | 1729         | 38 ranges                                            |
 | 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                       |
 | 4   | Verilog                        | 37108        | 137 x 137 grid                                       |
 | 5   | Verilog                        | 66649        | 177 ranges, 1000 query IDs                           |
@@ -714,6 +714,8 @@ Part 1 of the puzzle was to count all distinct paths from the device named `you`
 
 Path 2 of the puzzle was to count all distinct paths from the device `svr` to the device named `out` that visit both `dac` and `fft` (in any order).
 
+Random note: I solved this problem in MIPS assembly language when completing Advent of Code. Between that and HDL it's hard to say which one took more debugging :p. Feel free to check it out [here](https://github.com/rates37/aoc-2025/tree/main/day11)!
+
 ### Core algorithm / approach taken
 
 The core algorithm I used was a memoised depth-first search (DFS), which is virtually equivalent to a dynamic programming problem on the graph's topological order.
@@ -819,7 +821,7 @@ The current design is not pipelined, as each memory access stalls the FSM. This 
 
 - parallel memo check, could read the memo synchronous RAM speculatively before/during confirming the validity in the bit vector. This would save a clock cycle while checking validity, and then based on validity, the result can either be returned (if the data is valid), or the actual result can be computed (if the data is not valid).
 
-In its current implementation (and the implementation that was used for benchmarking and synthesis), the following parameters were set. With each one, the impose slightly different restrictions on the scalability of the design. However, they can all be easily increased (this would just require the use of more logic cells, memory blocks, etc.)
+In its current implementation (and the implementation that was used for benchmarking and synthesis), the following parameters were set. With each one, they impose slightly different restrictions on the scalability of the design. However, they can all be easily increased (this would just require the use of more logic cells, memory blocks, etc.)
 
 | Parameter         | Currently set to      |
 | ----------------- | --------------------- |
