@@ -630,7 +630,7 @@ def gen_day09(
     poly = [(padding, padding), (limit, padding), (limit, limit), (padding, limit)]
     current_vertex_count = 4
 
-    def insertects_any(p1, p2, current_poly, ignore_indices):
+    def intersects_any(p1, p2, current_poly, ignore_indices):
         if p1 == p2:
             return False
         x1, y1 = p1
@@ -729,7 +729,7 @@ def gen_day09(
         )  # the new "inner" corner
 
         ignore_list = {(idx - 1) % len(poly), idx}
-        if not insertects_any(p_a, p_b, poly, ignore_list) and not insertects_any(
+        if not intersects_any(p_a, p_b, poly, ignore_list) and not intersects_any(
             p_b, p_c, poly, ignore_list
         ):
             if idx == len(poly) - 1:
