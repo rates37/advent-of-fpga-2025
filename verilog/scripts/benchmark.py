@@ -15,6 +15,7 @@ from generate_input import (
     gen_day04,
     gen_day05,
     gen_day07,
+    gen_day09,
     gen_day11,
 )
 from generate_input import gen_day06_4_row as gen_day06
@@ -505,6 +506,20 @@ def benchmark_day07(
         day_name="Day 7",
     )
 
+def benchmark_day09(
+    lo: int = 20, hi: int = 500, n: int = 10, repeats: int = 5, timeout: int = 60
+) -> dict:
+    return general_benchmark(
+        lo,
+        hi,
+        n,
+        repeats,
+        timeout,
+        day_dirname="day09",
+        input_generator_function=gen_day09,
+        input_desc="Number of vertices",
+        day_name="Day 9",
+    )
 
 def benchmark_day11(
     lo: int = 10, hi: int = 250, n: int = 10, repeats: int = 5, timeout: int = 20
@@ -537,5 +552,6 @@ if __name__ == "__main__":
     # benchmark_day07(lo=10, hi=250, n=5, repeats=5, timeout=5)
     # benchmark_day04(lo=10, hi=249, n=4, repeats=5, timeout=30)
     # print(benchmark_day05())
-    print(benchmark_day11(20, 750, n=5, repeats=5, timeout=20))
+    # print(benchmark_day11(20, 750, n=5, repeats=5, timeout=20))
+    print(benchmark_day09())
     # benchmark_all()

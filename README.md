@@ -20,7 +20,7 @@ The table below summarises which problems have been successfully solved, the HDL
 | 7   | Verilog                        | 121496       | 142 x 142 grid                                       |
 | 8   | Verilog                        | 3342930\*    | 1000 x,y,z coordinates                               |
 | 9   | Verilog                        | 1341548      | 496 coordinates                                      |
-| 10  | Not yet                        |              |                                                      |
+| 10  | Not yet                        |              | 177 machines (up to 13 x 10)                         |
 | 11  | Verilog                        | 66542        | 583 device names                                     |
 | 12  | Not yet                        |              |                                                      |
 
