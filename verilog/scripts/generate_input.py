@@ -609,6 +609,200 @@ def gen_day07(
     return part1_answer, total_timelines
 
 
+def gen_day09(
+    n: int, output_filename: str, seed: int = DEFAULT_SEED
+) -> tuple[int, int]:
+    # n = number of 2D coordinates in the input file
+    # output_filename = self explanatory
+    # returns two ints: (part1_answer, part2_answer)
+    random.seed(seed)
+
+    # generate input: a rectilinear polygon
+
+    # assert minimums
+    if n < 4:
+        n = 4
+    if n % 2 != 0:
+        n += 1
+    # start with a large counter clockwise bounding box
+    padding = 5000
+    limit = 95000
+    poly = [(padding, padding), (limit, padding), (limit, limit), (padding, limit)]
+    current_vertex_count = 4
+
+    def insertects_any(p1, p2, current_poly, ignore_indices):
+        if p1 == p2:
+            return False
+        x1, y1 = p1
+        x2, y2 = p2
+        minX, maxX = min(x1, x2), max(x1, x2)
+        minY, maxY = min(y1, y2), max(y1, y2)
+
+        num_v = len(current_poly)
+        for i in range(num_v):
+            if i in ignore_indices:
+                continue
+
+            p3 = current_poly[i]
+            p4 = current_poly[(i + 1) % num_v]
+            x3, y3 = p3
+            x4, y4 = p4
+            # check overlap for rect segments:
+            is_A_vert = x1 == x2
+            is_B_vert = x3 == x4
+
+            if is_A_vert and is_B_vert:
+                if x1 == x3:
+                    if max(minY, min(y3, y4)) < min(maxY, max(y3, y4)):
+                        return True
+            elif not is_A_vert and not is_B_vert:
+                if y1 == y3:
+                    if max(minX, min(x3, x4)) < min(maxX, max(x3, x4)):
+                        return True
+            else:
+                if is_A_vert:
+                    vx, vyMin, vyMax = x1, minY, maxY
+                    hy, hxMin, hxMax = y3, min(x3, x4), max(x3, x4)
+                    if hxMin < vx < hxMax and vyMin < hy < vyMax:
+                        return True
+                else:
+                    hy, hxMin, hxMax = y1, minX, maxX
+                    vx, vyMin, vyMax = x3, min(y3, y4), max(y3, y4)
+                    if hxMin < vx < hxMax and vyMin < hy < vyMax:
+                        return True
+        return False
+
+    while current_vertex_count < n:
+        # pick a random corner to cut:
+        idx = random.randint(0, len(poly) - 1)
+        p_prev = poly[idx - 1]
+        p_curr = poly[idx]
+        p_next = poly[(idx + 1) % len(poly)]
+
+        len1 = abs(p_curr[0] - p_prev[0]) + abs(p_curr[1] - p_prev[1])
+        len2 = abs(p_curr[0] - p_next[0]) + abs(p_curr[1] - p_next[1])
+
+        if len1 < 20 or len2 < 20:
+            continue  # deem this as too small to make a cut
+
+        # determine size of cut:
+        cut1 = random.randint(5, min(len1 // 2, 5000))  # depth along incoming edge
+        cut2 = random.randint(5, min(len2 // 2, 5000))  # depth outgoing edge
+
+        # determine directions:
+        # from prev to curr:
+        dx1 = (
+            (p_curr[0] - p_prev[0]) // max(1, abs(p_curr[0] - p_prev[0]))
+            if p_curr[0] != p_prev[0]
+            else 0
+        )
+        dy1 = (
+            (p_curr[1] - p_prev[1]) // max(1, abs(p_curr[1] - p_prev[1]))
+            if p_curr[1] != p_prev[1]
+            else 0
+        )
+
+        # from curr to next:
+        dx2 = (
+            (p_next[0] - p_curr[0]) // max(1, abs(p_next[0] - p_curr[0]))
+            if p_next[0] != p_curr[0]
+            else 0
+        )
+        dy2 = (
+            (p_next[1] - p_curr[1]) // max(1, abs(p_next[1] - p_curr[1]))
+            if p_next[1] != p_curr[1]
+            else 0
+        )
+
+        # add new points:
+        p_a = (
+            p_curr[0] - dx1 * cut1,
+            p_curr[1] - dy1 * cut1,
+        )  # back from curr along incoming edge
+        p_c = (
+            p_curr[0] + dx2 * cut2,
+            p_curr[1] + dy2 * cut2,
+        )  # forward from curr along outgoing edge
+        p_b = (
+            p_a[0] + (p_c[0] - p_curr[0]),
+            p_a[1] + (p_c[1] - p_curr[1]),
+        )  # the new "inner" corner
+
+        ignore_list = {(idx - 1) % len(poly), idx}
+        if not insertects_any(p_a, p_b, poly, ignore_list) and not insertects_any(
+            p_b, p_c, poly, ignore_list
+        ):
+            if idx == len(poly) - 1:
+                new_poly = poly[:idx] + [p_a, p_b, p_c]
+            else:
+                new_poly = poly[:idx] + [p_a, p_b, p_c] + poly[idx + 1 :]
+            poly = new_poly
+            current_vertex_count += 2
+    # write to output file:
+    with open(output_filename, "w") as f:
+        for x, y in poly:
+            f.write(f"{x},{y}\n")
+
+    # solve this problem:
+    segments = []
+    for i in range(len(poly)):
+        segments.append((poly[i], poly[(i + 1) % len(poly)]))
+
+    def get_area(p1, p2):
+        return (abs(p1[0] - p2[0]) + 1) * (abs(p1[1] - p2[1]) + 1)
+
+    best_area_p1 = 0
+    for i in range(len(poly)):
+        for j in range(i):
+            best_area_p1 = max(best_area_p1, get_area(poly[i], poly[j]))
+
+    def is_rect_in_poly(p1, p2, segs):
+        x1, y1 = p1
+        x2, y2 = p2
+        minX, maxX = min(x1, x2), max(x1, x2)
+        minY, maxY = min(y1, y2), max(y1, y2)
+
+        # edge intersection checK:
+        for (sx1, sy1), (sx2, sy2) in segs:
+            if sx1 == sx2:
+                if minX < sx1 < maxX:
+                    sy_min = min(sy1, sy2)
+                    sy_max = max(sy1, sy2)
+                    if max(minY, sy_min) < min(maxY, sy_max):
+                        return False
+            else:
+                if minY < sy1 < maxY:
+                    sx_min = min(sx1, sx2)
+                    sx_max = max(sx1, sx2)
+                    if max(minX, sx_min) < min(maxX, sx_max):
+                        return False
+        # point in poly:
+        cx = (minX + maxX) / 2
+        cy = (minY + maxY) / 2
+        intersections = 0
+
+        for (sx1, sy1), (sx2, sy2) in segs:
+            if sx1 == sx2:
+                sy_min = min(sy1, sy2)
+                sy_max = max(sy1, sy2)
+                if sy_min < cy < sy_max:
+                    if sx1 > cx:
+                        intersections += 1
+
+        return (intersections % 2) == 1
+
+    best_area_p2 = 0
+    for i in range(len(poly)):
+        p1 = poly[i]
+        for j in range(i):
+            p2 = poly[j]
+            area = get_area(p1, p2)
+            if area > best_area_p2 and is_rect_in_poly(p1, p2, segments):
+                best_area_p2 = area
+
+    return best_area_p1, best_area_p2
+
+
 def gen_day11(
     n: int, output_filename: str, seed: int = DEFAULT_SEED
 ) -> tuple[int, int]:
@@ -724,4 +918,4 @@ def gen_day11(
 
 if __name__ == "__main__":
     # print(gen_day07(142, "day07-142.txt", 42))
-    print(gen_day11(20, "day11-20.txt"))
+    print(gen_day09(30, "day09-30.txt"))
