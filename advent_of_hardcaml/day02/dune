@@ -1,0 +1,13 @@
+(library
+ (name day02)
+ (modules period_summer range_summer day02_core)
+ (libraries hardcaml utils)
+ (preprocess
+  (pps ppx_hardcaml ppx_jane)))
+
+(executable
+ (name day02_tb)
+ (modules day02_tb)
+ (libraries day02 hardcaml hardcaml_waveterm base utils stdio)
+ (preprocess
+  (pps ppx_hardcaml ppx_jane)))
