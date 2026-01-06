@@ -286,18 +286,20 @@ module day09_core #(
                 S_READ: begin
                     if (rom_data == "\n" || (rom_addr > 0 && rom_data == 0)) begin
                         if (rom_data == "\n" || rom_data == 0) begin
-                            // Write to RAM
-                            ram_we_a <= 1;
-                            ram_addr_a <= parse_idx;
-                            ram_w_data_x <= parse_x;
-                            ram_w_data_y <= parse_y;
-                            
-                            parse_idx <= parse_idx + 1;
-                            parsing_first <= 1;
-                            parse_x <= 0;
-                            parse_y <= 0;
+                            if (!parsing_first) begin
+                                // Write to RAM
+                                ram_we_a <= 1;
+                                ram_addr_a <= parse_idx;
+                                ram_w_data_x <= parse_x;
+                                ram_w_data_y <= parse_y;
+                                
+                                parse_idx <= parse_idx + 1;
+                                parsing_first <= 1;
+                                parse_x <= 0;
+                                parse_y <= 0;
+                            end
 
-                            if (rom_data == 0 && parsing_first) begin
+                            if (rom_data == 0) begin
                                 state <= S_BUILD_SEGMENTS;
                                 point_count <= parse_idx;
                             end
