@@ -840,7 +840,7 @@ In benchmarking, the correctness of the solver's output was also checked, and no
 
 * Implement a 'sorted set' or 'sorted list' module and use it to store the 12 closest vertices to each node, and then use the 3D kissing number property to store those 12,000 edges. This uses slightly more memory than the approach I've implemented, but allows us to guarantee optimal / correct results. This approach would likely increase the number of clock cycles, as in my current implementation, I iterate over `for i in [1..n]: for j in [1..i]` **twice**, but this implementation, I would need to iterate over `for i in [1..n]: for j in [1..n]` **once**, and implement additional functionality to ensure there are no duplicate edges selected.
 
-* 
+* Implement heapsort to replace bitonic sort, which would likely reduce the number of clock cycles required for the sorting portion of the solution. 
 
 
 ### Key Synthesis Metrics:
