@@ -4,6 +4,8 @@ import math
 import string
 import functools as ft
 
+from typing import Any
+
 DEFAULT_SEED = sum(ord(c) for c in "Advent of FPGA")
 
 
@@ -609,6 +611,79 @@ def gen_day07(
     return part1_answer, total_timelines
 
 
+def gen_day08(
+    n: Any, output_filename: str, seed: int = DEFAULT_SEED
+) -> tuple[int, int]:
+    # n = number of 3D coordinates in the input file, if none will use 1000
+    # output_filename = self explanatory
+    # returns two ints: (part1_answer, part2_answer)
+    if n is None:
+        n = 1000
+    random.seed(seed)
+
+    # generate input:
+    points = []
+    for _ in range(n):
+        points.append((
+            random.randint(0, 100000),
+            random.randint(0, 100000),
+            random.randint(0, 100000)
+        ))
+
+    # write to output file:
+    with open(output_filename, "w") as f:
+        for p in points:
+            f.write(f"{p[0]},{p[1]},{p[2]}\n")
+    
+    # solver:
+    edges = []
+    for i in range(n):
+        for j in range(i):
+            p1 = points[i]
+            p2 = points[j]
+            d = (p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 + (p1[2]-p2[2])**2 
+            edges.append((d,i,j))
+    edges.sort(key=lambda x:x[0])
+    parent = list(range(n))
+    def find(i):
+        if parent[i] == i:
+            return i
+        parent[i] = find(parent[i]) # path compression why not
+        return parent[i]
+
+    def union(i,j):
+        ri = find(i)
+        rj = find(j)
+        if ri != rj:
+            parent[ri] = rj
+            return True
+        
+        return False # if no merge occurred
+
+    p1_answer = 0
+    p2_answer = 0
+    p1_limit = 1000
+    num_components = n
+
+    for idx, (_, u, v) in enumerate(edges):
+        if union(u,v):
+            num_components -=1
+
+            if num_components == 1: # solved part 2:
+                p2_answer = points[u][0] * points[v][0]
+                break
+        
+        # check p1 consition:
+        if (idx+1) == p1_limit:
+            counts = {}
+            for i in range(n):
+                root = find(i)
+                counts[root] = counts.get(root,0) + 1
+            sizes = sorted(list(counts.values()), reverse=True)
+
+            p1_answer = sizes[0] * sizes[1] * sizes[2]
+    return p1_answer, p2_answer
+
 def gen_day09(
     n: int, output_filename: str, seed: int = DEFAULT_SEED
 ) -> tuple[int, int]:
@@ -918,4 +993,4 @@ def gen_day11(
 
 if __name__ == "__main__":
     # print(gen_day07(142, "day07-142.txt", 42))
-    print(gen_day09(30, "day09-30.txt"))
+    print(gen_day08(700, "day08-1000-2.txt", seed=3))
