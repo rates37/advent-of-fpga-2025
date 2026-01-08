@@ -771,7 +771,7 @@ module edge_generator #(
                         // flush pipeline -> do nothing until entire pipeline is invalid
                         if (!pipe_valid[0] && !pipe_valid[1] && !pipe_valid[2] && !pipe_valid[3] && !pipe_valid[4]) begin
                             state <= S_THRESHOLD;
-                            bucket_idx <= 0;
+                            bucket_idx <= NUM_BUCKETS-1;
                         end
                     end else if (last_j) begin
                         idx_i <= idx_i + 1;
@@ -783,8 +783,9 @@ module edge_generator #(
 
 
                 S_THRESHOLD: begin
-                    // find the smallest bucket that fills at least half of the buffer:
-                    if (bucket_counts[bucket_idx] >= (MAX_EDGES>>1) || bucket_idx == NUM_BUCKETS-1) begin
+                    // find the bucket that fist the largest number of edges that fit within the buffer
+                    // $display("bucket_counts[%0d] = %0d", bucket_idx, bucket_counts[bucket_idx]);
+                    if (bucket_counts[bucket_idx] < (MAX_EDGES) || bucket_idx == 0) begin
                         $display("Info: bucket %0d chosen!", bucket_idx);
                         threshold <= BUCKET_BASE << bucket_idx;
                         state <= S_COLLECT;
@@ -794,7 +795,7 @@ module edge_generator #(
                             pipe_valid[k] <= 0;
                         end
                     end else begin
-                        bucket_idx <= bucket_idx + 1;
+                        bucket_idx <= bucket_idx - 1;
                     end
                 end
 
