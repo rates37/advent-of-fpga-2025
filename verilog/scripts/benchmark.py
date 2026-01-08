@@ -15,6 +15,7 @@ from generate_input import (
     gen_day04,
     gen_day05,
     gen_day07,
+    gen_day08,
     gen_day09,
     gen_day11,
 )
@@ -506,6 +507,21 @@ def benchmark_day07(
         day_name="Day 7",
     )
 
+def benchmark_day08(
+    lo: int = 700, hi: int = 1000, n: int = 3, repeats: int = 3, timeout: int = 60
+) -> dict:
+    return general_benchmark(
+        lo,
+        hi,
+        n,
+        repeats,
+        timeout,
+        day_dirname="day08",
+        input_generator_function=gen_day08,
+        input_desc="Number of junction boxes",
+        day_name="Day 8",
+    )
+
 def benchmark_day09(
     lo: int = 20, hi: int = 500, n: int = 10, repeats: int = 5, timeout: int = 60
 ) -> dict:
@@ -553,5 +569,6 @@ if __name__ == "__main__":
     # benchmark_day04(lo=10, hi=249, n=4, repeats=5, timeout=30)
     # print(benchmark_day05())
     # print(benchmark_day11(20, 750, n=5, repeats=5, timeout=20))
-    print(benchmark_day09())
+    # print(benchmark_day09())
+    print(benchmark_day08())
     # benchmark_all()
