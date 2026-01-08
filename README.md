@@ -18,7 +18,7 @@ The table below summarises which problems have been successfully solved, the HDL
 | 5   | Verilog                        | 66649        | 177 ranges, 1000 query IDs                           |
 | 6   | Verilog                        | 35139        | 4 numeric rows, 1000 operators, ~3709 chars per line |
 | 7   | Verilog                        | 121496       | 142 x 142 grid                                       |
-| 8   | Verilog                        | 3342930\*    | 1000 x,y,z coordinates                               |
+| 8   | Verilog                        | 3351117\*    | 1000 x,y,z coordinates                               |
 | 9   | Verilog                        | 1341548      | 496 coordinates                                      |
 | 10  | Not yet                        |              | 177 machines (up to 13 x 10)                         |
 | 11  | Verilog                        | 66542        | 583 device names                                     |

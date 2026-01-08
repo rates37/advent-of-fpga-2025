@@ -3,8 +3,8 @@ module day08_core #(
     parameter MAX_NODES = 1024,
     parameter NODE_ADDR_BITS = 10,
     parameter COORD_WIDTH = 32,
-    parameter MAX_EDGES = 8192,
-    parameter EDGE_ADDR_BITS = 13,
+    parameter MAX_EDGES = 16384,
+    parameter EDGE_ADDR_BITS = 14,
     parameter EDGE_WIDTH = 64,
     parameter PART1_EDGES = 1000
 ) (
