@@ -73,7 +73,7 @@ module tb_ilp_solver;
             $display("Result: min_cost = %0d", min_cost);
             $display("Solution:");
             for (i = 0; i < n; i = i + 1) begin
-                if (solution[i] > 0)
+                if ($signed(solution[i]) > 0)
                     $display("\tx[%0d] = %0d", i, solution[i]);
             end
             
