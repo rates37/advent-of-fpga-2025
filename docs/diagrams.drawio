@@ -1,4 +1,4 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.2.9 Chrome/140.0.7339.249 Electron/38.7.2 Safari/537.36" version="29.2.9" pages="4">
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.2.9 Chrome/140.0.7339.249 Electron/38.7.2 Safari/537.36" version="29.2.9" pages="6">
   <diagram name="Page-1" id="59Smp9N8GCeQoAucmM49">
     <mxGraphModel dx="1198" dy="1189" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
       <root>
@@ -494,6 +494,127 @@
         </mxCell>
         <mxCell id="mZupzV3JeOA-i5M_iKkP-3" edge="1" parent="1" source="qHtXtcnrIqA0CNk-xp0U-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;startArrow=classic;startFill=1;curved=1;" target="qHtXtcnrIqA0CNk-xp0U-25">
           <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="2aMkCx4kZk1tnQ9q0pl6" name="Day 8 High Level Diagram">
+    <mxGraphModel dx="967" dy="542" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="zLIQg5nJd_kq140FH8My-7" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="zLIQg5nJd_kq140FH8My-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-1" parent="1" style="shape=datastore;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Node RAM} \\ 1024 \times 96 \text{-bit}}$$" vertex="1">
+          <mxGeometry height="90" width="90" x="420" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-3" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="zLIQg5nJd_kq140FH8My-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-4" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;startArrow=classic;startFill=1;endArrow=none;endFill=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="290" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="$$\text{Parser}$$" vertex="1">
+          <mxGeometry height="60" width="120" x="230" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-5" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$\text{ASCII data}$$" vertex="1">
+          <mxGeometry height="30" width="60" x="260" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-9" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="zLIQg5nJd_kq140FH8My-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="$$\text{Edge Generator}$$" vertex="1">
+          <mxGeometry height="60" width="120" x="405" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-11" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.15;exitY=0.05;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" target="zLIQg5nJd_kq140FH8My-10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="625" y="399" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-14" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="zLIQg5nJd_kq140FH8My-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-8" parent="1" style="shape=datastore;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Edge RAM} \\ 16384 \times 64 \text{-bit}}$$" vertex="1">
+          <mxGeometry height="90" width="90" x="610" y="395" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-10" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="$$\text{Sorter}$$" vertex="1">
+          <mxGeometry height="60" width="120" x="595" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-12" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.85;entryY=0.05;entryDx=0;entryDy=0;entryPerimeter=0;" target="zLIQg5nJd_kq140FH8My-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="686" y="345" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-16" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="980" y="440.42857142857133" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-13" parent="1" style="rounded=0;whiteSpace=wrap;html=1;points=[[0,0,0,0,0],[0,0.25,0,0,0],[0,0.5,0,0,0],[0,0.75,0,0,0],[0,1,0,0,0],[0.2,1,0,0,0],[0.25,0,0,0,0],[0.4,1,0,0,0],[0.5,0,0,0,0],[0.6,1,0,0,0],[0.75,0,0,0,0],[0.8,1,0,0,0],[1,0,0,0,0],[1,0.25,0,0,0],[1,0.5,0,0,0],[1,0.75,0,0,0],[1,1,0,0,0]];" value="$$\text{DSU}$$" vertex="1">
+          <mxGeometry height="60" width="120" x="760" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-15" parent="1" style="shape=datastore;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Parent RAM} \\ 1024 \times 10 \text{-bit}}$$" vertex="1">
+          <mxGeometry height="90" width="90" x="690" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-17" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$\text{Results}$$" vertex="1">
+          <mxGeometry height="30" width="60" x="990" y="425" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-18" parent="1" style="shape=datastore;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Size RAM} \\ 1024 \times 10 \text{-bit}}$$" vertex="1">
+          <mxGeometry height="90" width="90" x="860" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-19" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.2;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.15;entryY=0.05;entryDx=0;entryDy=0;entryPerimeter=0;curved=1;" target="zLIQg5nJd_kq140FH8My-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-20" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.85;exitY=0.05;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.4;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;curved=1;" target="zLIQg5nJd_kq140FH8My-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-22" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.8;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.85;entryY=0.05;entryDx=0;entryDy=0;entryPerimeter=0;curved=1;" target="zLIQg5nJd_kq140FH8My-18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zLIQg5nJd_kq140FH8My-23" edge="1" parent="1" source="zLIQg5nJd_kq140FH8My-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.15;exitY=0.05;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.6;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;curved=1;" target="zLIQg5nJd_kq140FH8My-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="ty4uJ6II5dxoviaSlibg" name="Day 8 Edge Generator Pipeline">
+    <mxGraphModel dx="695" dy="1212" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="aQxEY_bu8nwqxGJYC2YC-6" edge="1" parent="1" source="aQxEY_bu8nwqxGJYC2YC-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="aQxEY_bu8nwqxGJYC2YC-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="aQxEY_bu8nwqxGJYC2YC-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 1:} \\ \text{Issue RAM read addresses} \\ \text{for nodes } \texttt{i} \text{ and } \texttt{j}}$$" vertex="1">
+          <mxGeometry height="90" width="170" x="-190" y="-50" as="geometry" />
+        </mxCell>
+        <mxCell id="aQxEY_bu8nwqxGJYC2YC-7" edge="1" parent="1" source="aQxEY_bu8nwqxGJYC2YC-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="aQxEY_bu8nwqxGJYC2YC-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="aQxEY_bu8nwqxGJYC2YC-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 2:} \\ \text{Wait 1 cycle for} \\ \text{RAM latency}}$$" vertex="1">
+          <mxGeometry height="90" width="170" x="-190" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="aQxEY_bu8nwqxGJYC2YC-8" edge="1" parent="1" source="aQxEY_bu8nwqxGJYC2YC-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="aQxEY_bu8nwqxGJYC2YC-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="aQxEY_bu8nwqxGJYC2YC-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 3:} \\ \text{Compute deltas} \\ \text{dx, dy, dz}}$$" vertex="1">
+          <mxGeometry height="90" width="170" x="-190" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="aQxEY_bu8nwqxGJYC2YC-9" edge="1" parent="1" source="aQxEY_bu8nwqxGJYC2YC-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="aQxEY_bu8nwqxGJYC2YC-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="aQxEY_bu8nwqxGJYC2YC-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 4:} \\ \text{Square values} \\ \text{dx}^2, \text{dy}^2, \text{dz}^2}$$" vertex="1">
+          <mxGeometry height="90" width="170" x="-190" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="aQxEY_bu8nwqxGJYC2YC-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 5:} \\ \text{Sum deltas} \\ \text{dx}^2, \text{dy}^2, \text{dz}^2}$$" vertex="1">
+          <mxGeometry height="90" width="170" x="-190" y="550" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
