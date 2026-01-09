@@ -100,7 +100,7 @@ module ilp_solver #(
             end
 
             for (i=0; i<MAX_LIGHTS; i=i+1) begin
-                for (j=0; j<MAX_LIGHTS; j=j+1) begin
+                for (j=0; j<MAX_BUTTONS; j=j+1) begin
                     aug_coef[i][j] <= 0;
                 end
                 aug_rhs[i] <= 0;
@@ -290,7 +290,7 @@ module ilp_solver #(
                     for (i=0; i<MAX_BUTTONS; i=i+1) begin
                         if (i<n) begin
                             if (x[i] < 0) begin
-                                all_valid <= 0;
+                                all_valid = 0;
                             end else begin
                                 current_cost = current_cost + x[i];
                             end

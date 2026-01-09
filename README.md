@@ -11,17 +11,17 @@ The table below summarises which problems have been successfully solved, the HDL
 
 | Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                           |
 | --- | ------------------------------ | ------------ | ---------------------------------------------------- |
-| 1   | Both                           | 19691        | 4780 rotations                                       |
-| 2   | Both                           | 1729         | 38 ranges                                            |
-| 3   | Verilog                        | 20217        | 200 lines (100 chars per line)                       |
-| 4   | Verilog                        | 37108        | 137 x 137 grid                                       |
-| 5   | Verilog                        | 66649        | 177 ranges, 1000 query IDs                           |
-| 6   | Verilog                        | 35139        | 4 numeric rows, 1000 operators, ~3709 chars per line |
-| 7   | Verilog                        | 121496       | 142 x 142 grid                                       |
-| 8   | Verilog                        | 3351117\*    | 1000 x,y,z coordinates                               |
-| 9   | Verilog                        | 1341548      | 496 coordinates                                      |
-| 10  | Not yet                        |              | 177 machines (up to 13 x 10)                         |
-| 11  | Verilog                        | 66542        | 583 device names                                     |
+| 1   | Both                           | 19,691       | 4780 rotations                                       |
+| 2   | Both                           | 1,729        | 38 ranges                                            |
+| 3   | Verilog                        | 20,217       | 200 lines (100 chars per line)                       |
+| 4   | Verilog                        | 37,108       | 137 x 137 grid                                       |
+| 5   | Verilog                        | 66,649       | 177 ranges, 1000 query IDs                           |
+| 6   | Verilog                        | 35,139       | 4 numeric rows, 1000 operators, ~3709 chars per line |
+| 7   | Verilog                        | 121,496      | 142 x 142 grid                                       |
+| 8   | Verilog                        | 33,51,117\*  | 1000 x,y,z coordinates                               |
+| 9   | Verilog                        | 1,341,548    | 496 coordinates                                      |
+| 10  | Verilog                        | 58,319,971   | 177 machines (up to 13 x 10)                         |
+| 11  | Verilog                        | 66,542       | 583 device names                                     |
 | 12  | Not yet                        |              |                                                      |
 
 \* Day 8's solution not guaranteed to produce correct results. However it is overwhelmingly likely to produce correct results on typical puzzle inputs. Refer to the day 8 section below for details.
@@ -873,7 +873,7 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 ## Day 10:
 
-Currently unsolved
+Coming soon
 
 ## Day 11:
 
