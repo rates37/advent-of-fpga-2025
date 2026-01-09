@@ -843,7 +843,86 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 ## Day 9:
 
-Writeup coming soon
+Day 9's puzzle input consists of a list of 2D integer coordinates representing red tiles on a grid. The coordinates are ordered to form a closed loop where consecutive tiles are connected by straight horizontal or vertical segments. 
+
+The goal of part 1 is to find the maximum area of a rectangle whose two opposite corners are red tiles. Part 2's goals is similar, except that the region of the rectangle must fit entirely within the closed grid.
+
+### Algorithm Overview
+
+At a high level, the algorithm solves both parts by exhaustively checking all possible pairs of vertices:
+
+* Part 1 is relatively straightforward, the largest seen area can simply be tracked as the vertices are iterated over
+
+* Part 2 is slightly more involved, as it requires geometric validation to ensure the rectangle is entirely within the polygon region formed by the vertices. For this, I use two geometry techniques:
+
+    1. Cut detection: check if any polygon edge (a segment formed by two sequential coordinates) passes through the interior of the rectangle. If so, the rectangle is invalid because it contains the outside of the polygon.
+
+    2. Ray casting: Determine if the rectangle's centre is inside the polygon using the ray casting algorithm; cast a horizontal ray from the center rightward and count how many vertical polygon edges it crosses. An odd count means that the center is inside, even means the center is outside
+
+A rectangle is valid for part 2 only if:
+
+* No segment cuts through it (all tiles are in the polygon)
+
+* Its center is inside the polygon (the number of edge crossings of the ray is odd)
+
+
+
+### Implementation in Hardware
+
+My approach to solving this puzzle uses a pipelined hardware architecture that processes all possible rectangle pairs, whilst simultaneously validating them against the geometric constraints for part 2.
+
+The solution can be broken into three main phases:
+
+1. Parse and store the coordinates from the input: Read the input character-by-character and store them in dual port RAM for access later.
+
+2. Build segment pipeline: Load the polygon segments (edges connecting consecutive tiles) into a multi-stage pipeline
+
+3. Process all coordinate pairs (all rectangles): iterate through all unique pairs of tiles, computing part 1 areas and maintaining that maximum accumulator, whilst also feeding candidate rectangles through the pipeline for applying the part 2 validation checks.
+
+#### Early Pruning:
+
+In part 2, we only feed rectangles that are larger than the current best-seen part 2 result. In practice this saves a lot of time, since the main computation bottleneck is the pipeline itself.
+
+#### Architecture Overview:
+
+The design uses a chunked pipeline approach, where polygon segments are distributed across multiple pipeline stages; each stage stores a subset of the segments locally, and performs these collision/containment checks in parallel. 
+
+Initially, I considered having a pipeline stage for every segment, which would reduce the time complexity for part 2's solution from $\mathcal{O}(n^3)$ to an amortised $\mathcal{O}(N^2)$, however the puzzle input had 496 points, which would require 496 pipeline stages (completely infeasible). Rather than this, I made the decision to allow each stage to store multiple segments. Which this increases the number of clock cycles requires, it makes the actual design feasible, so it's a necessary trade-off.
+
+<p align="center">
+<img src="docs/img/day9_pipeline_structure.png" alt="Structure of Day 9 Segment Pipeline Data Flow" width="600">
+</p>
+
+With this approach, a candidate rectangle is fed into the first pipeline stage, and that first stage will process the candidate rectangle with the first 32 segments, after which the next candidate rectangle is fed into pipeline stage 0, and the current rectangle in stage 0 is fed into stage 1. This allows $512/32 = 16$ candidates to be processed in parallel when the pipeline is full.
+
+#### Pipeline Stage Design
+
+Each pipeline stage implements a ready/valid handshake protocol for flow control to ensure that stages only read in data or pass data forward when the previous or next stage has finished processing (respectively).
+
+Some optimisations were made in the [pipeline stage implementation](verilog/day09/pipeline_stage.v):
+
+* Short circuit evaluation: If a cut is detected, the pipeline stage implements short circuit detection to end processing early (so it becomes ready for the next candidate rectangle as early as possible), since this current rectangle has been invalidated, so there's no need to perform further calculation
+
+* Early pruning: mentioned above, only candidate rectangles with area larger than the current best are fed into the pipeline
+
+* Prefetching: pipeline stages prefetch the next segment while processing the current segment if it is ready
+
+### Alternative approaches / Optimisations:
+
+* Serial implementation: Removing the pipeline and simply performing the $\mathcal{O}(N^3)$ approach would reduce the amount of logic usage, but drastically degrade performance
+
+* Increased parallelism: Using more stages would improve throughput, which would result in noticeable performance gains for larger inputs
+
+
+### Benchmarking and Evaluation
+
+My day 9 solution was benchmarked similarly to previous days. It was evaluated over an average/stdev of 5 runs. Tested with varying the number of points in the input from 20 to 500. The input generation was done by starting with a large square, and iteratively taking rectangular chunks out of corners to increase the number of points whilst maintaining the properties of the input. If interested, the input generation process can be seen [here](verilog/scripts/generate_input.py#L702). I'm unsure if the real inputs are generated in this way or in another way, however I think it's unlikely that a different method of input generation would produce significantly different results on the benchmark. The results of the benchmark are shown in the plot below. My real puzzle input had 496 points in the input file.
+
+<p align="center">
+<img src="verilog/scripts/benchmarks/day09_benchmark_20260107_083838.png" alt="Plot of clock cycles vs number of input points" width="720">
+</p>
+
+This benchmark exhibits a polynomial relation between the input size and the number of clock cycles taken, which is to be expected based on the analysis/discussion of the approach done above. The stdev tends to increase and become more noticeable as the input size increases, and this is likely due to the short circuiting and early pruning, as these will depend on the actual coordinates/numbers in the input (which has been randomly generated, and is different for each trial).
 
 ### Key Synthesis Metrics:
 
