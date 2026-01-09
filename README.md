@@ -1122,13 +1122,7 @@ Hardcaml - to learn something new!
 
 # Todos / Task List:
 
-- [ ] Day 10 in Verilog
-
 - [ ] Check todos in completed days to resolve issues, add documentation, etc.
-- [ ] Document the hell out of the interesting days:
-
-  - day 9 pipeline to make part 2 N^2 ammortised
 
 - [ ] Attempt days 3-X in Hardcaml
-- [ ] Write tons of readme stuff to explain
 - [ ] Continue benchmarking completed days
