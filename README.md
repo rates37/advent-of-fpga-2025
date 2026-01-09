@@ -688,43 +688,42 @@ This problem presented a significant challenge, as efficient MST algorithms woul
 
 Using 32-bits to store edge weights, each edge would take up 64 bits (32-bit weight, and 2 x 16-bit node indices) Storing all edges in memory, resulting in around 32Mbits of memory. While some modern FPGAs may support this amount of embedded memory, my DE10-lite does not, and furthermore, this would be a very wasteful use of memory as:
 
-* The MST only requires $N-1 = 999$ edges, around 0.2% of the total edges
+- The MST only requires $N-1 = 999$ edges, around 0.2% of the total edges
 
-* Part 1 only needs the smallest 1000 edges
+- Part 1 only needs the smallest 1000 edges
 
-* Many edges are likely irrelevant to consider (since they are so far apart, and there might be closer nodes between the two distant ones)
-
+- Many edges are likely irrelevant to consider (since they are so far apart, and there might be closer nodes between the two distant ones)
 
 #### Sparsity Heuristic
 
 In Euclidian space, the MST edges are statistically concentrated among the shortest distances. For randomly distributed points in a cubic space:
 
-* The expected longest MST edge length scales with $\mathcal{O}((log(n) / n)^{(1/3)})$ ([source](https://arxiv.org/abs/0905.3584))
+- The expected longest MST edge length scales with $\mathcal{O}((log(n) / n)^{(1/3)})$ ([source](https://arxiv.org/abs/0905.3584))
 
-* The "kissing number" in 3D is 12, meaning each node only has up to 12 immediate spatial neighbours
+- The "kissing number" in 3D is 12, meaning each node only has up to 12 immediate spatial neighbours
 
 So rather than storing all edges, we can employ a bucket-based filtering approach. This approach is split into two parts:
 
 #### Part 1: Histogram Generation
 
-* Iterate through all pairs of nodes.
+- Iterate through all pairs of nodes.
 
-* For each pair, compute the distance between the two nodes
+- For each pair, compute the distance between the two nodes
 
-* Increment histogram buckets based on distance ranges:
+- Increment histogram buckets based on distance ranges:
 
-    * Bucket 0: `dist < bucket_base`
-    * Bucket 1: `dist < bucket_base*2`
-    * Bucket 2: `dist < bucket_base*4`
-    * And so on ...
+  - Bucket 0: `dist < bucket_base`
+  - Bucket 1: `dist < bucket_base*2`
+  - Bucket 2: `dist < bucket_base*4`
+  - And so on ...
 
 #### Part 2: Threshold Selection and Collection
 
-* Scan the buckets to find the smallest threshold $T$ such that the number of edges below $T$ exceeds the buffer capacity (the most amount of memory that we are willing to use to store edges)
+- Scan the buckets to find the smallest threshold $T$ such that the number of edges below $T$ exceeds the buffer capacity (the most amount of memory that we are willing to use to store edges)
 
-* Re-iterate through all node pairs
+- Re-iterate through all node pairs
 
-* Only store edges where `dist(u,v) < T` into memory
+- Only store edges where `dist(u,v) < T` into memory
 
 #### Heuristic Justification
 
@@ -738,17 +737,15 @@ This heuristic trades the guarantee of solution optimality for dramatic memory s
 
 Once the chosen edges have been selected, Kruskal's MST algorithm can be applied to solve this problem, which is briefly described as:
 
-* Sort the edges based on increasing order
+- Sort the edges based on increasing order
 
-* Initialise a Disjoint Set Union (DSU) data structure
+- Initialise a Disjoint Set Union (DSU) data structure
 
-* Iterate through the edges in sorted order:
+- Iterate through the edges in sorted order:
 
-    * If the two nodes in that edge are not in the same set inside the DSU, perform the union operation using the DSU
+  - If the two nodes in that edge are not in the same set inside the DSU, perform the union operation using the DSU
 
-    * Otherwise, ignore it
-
-
+  - Otherwise, ignore it
 
 ### Implementation in Hardware
 
@@ -766,59 +763,51 @@ The edge generation process uses a pipelined structure to minimise critical path
 
 This pipeline structure is used for both the histogram phases and the threshold/collection phases.
 
-
-
-3. The `bitonic_sorter` module sorts the edges based on distance using bitonic sort. 
+3. The `bitonic_sorter` module sorts the edges based on distance using bitonic sort.
 
 4. The `dsu` module maintains a disjoint set union data structure, and implements the Kruskal's algorithm process outlined above (and after the 1000th edge has been considered, computes the product of the top-3 size components before continuing with Kruskal's). The DSU maintains two arrays (RAMs) to store the `parents` and `sizes` arrays, as the DSU implements the union by size heuristic.
 
-
-The  diagram below shows a high level / abstract view of the top level `day08_core` module with all submodules/RAMs.
+The diagram below shows a high level / abstract view of the top level `day08_core` module with all submodules/RAMs.
 
 <p align="center">
 <img src="docs/img/day8_high_level_structure.png" alt="High-level abstract diagram of Day 8 solution" width="720">
 </p>
 
-
-
-
 #### Bitonic Sort Explanation / Justification for Choice
 
 I chose Bitonic sort as the sorting algorithm of choice for a few reasons here:
 
-* It is 'in place', meaning $\mathcal{O}(1)$ additional memory is required
+- It is 'in place', meaning $\mathcal{O}(1)$ additional memory is required
 
-* It's worst case time complexity is $ N \log ^2 (N)$. While not the lowest worst-case time complexity sorting algorithm, it is quite low, and beats out many other in-place algorithms like insertion-sort, bubble sort, etc.
+- It's worst case time complexity is $ N \log ^2 (N)$. While not the lowest worst-case time complexity sorting algorithm, it is quite low, and beats out many other in-place algorithms like insertion-sort, bubble sort, etc.
 
-* It uses very simple hardware; simply a bitwise xor and a comparator, along with logic to read/write to/from memory
+- It uses very simple hardware; simply a bitwise xor and a comparator, along with logic to read/write to/from memory
 
-* I've never implemented bitonic sort before and thought it would be interesting
+- I've never implemented bitonic sort before and thought it would be interesting
 
 If I get time before submission I'd like to try and implement heapsort, since it is also in-place, and has a better worst-case time complexity.
-
 
 #### DSU Implementation Details / Explanation
 
 The DSU is a data structure that keeps track of which items belong to the same set. The core idea is that each set is represented as a tree, and the root of each tree is the ID of that group. It uses two arrays:
 
-* `parent[i]` stores the parent of node `i`
-    * if `parent[i] == i`, then `i` is the root of its tree
-* `size[i]` is only meaningful for roots
-    * stores how many elements are in group `i`
+- `parent[i]` stores the parent of node `i`
+  - if `parent[i] == i`, then `i` is the root of its tree
+- `size[i]` is only meaningful for roots
+  - stores how many elements are in group `i`
 
 It supports two operations:
 
-* `find(x)`: follows the parents of node `x` repeatedly until it finds a node where the parent is itself (the root of that tree, and the ID of the group)
+- `find(x)`: follows the parents of node `x` repeatedly until it finds a node where the parent is itself (the root of that tree, and the ID of the group)
 
-* `union(a,b)`: merges the group containing `a` and the group containing `b` into a single group
-    * find the roots of `a` and `b`
-    * if they're the same, do nothing
-    * Otherwise, attach the smaller group under the larger group's root (union by size heuristic), and update the size of the new root
+- `union(a,b)`: merges the group containing `a` and the group containing `b` into a single group
+  - find the roots of `a` and `b`
+  - if they're the same, do nothing
+  - Otherwise, attach the smaller group under the larger group's root (union by size heuristic), and update the size of the new root
 
-Using the union by size heuristic when performing a union ensures that the tree height remains logarithmic and ensures faster `find` operations. 
+Using the union by size heuristic when performing a union ensures that the tree height remains logarithmic and ensures faster `find` operations.
 
 There are other optimisations, such as path compression, however these require additional memory or additional operations, and so they were not implemented here. Additionally, since there are only 1000 nodes, a logarithmic height will not degrade performance of `find` operations significantly.
-
 
 ### Benchmarking and Evaluation
 
@@ -834,14 +823,11 @@ Because of the histogram-based approach used to generate edges, the number of ed
 
 In benchmarking, the correctness of the solver's output was also checked, and no incorrect outputs were encountered (although with enough trials, it's inevitable that it will eventually produce an incorrect result).
 
-
-
 ### Future work
 
-* Implement a 'sorted set' or 'sorted list' module and use it to store the 12 closest vertices to each node, and then use the 3D kissing number property to store those 12,000 edges. This uses slightly more memory than the approach I've implemented, but allows us to guarantee optimal / correct results. This approach would likely increase the number of clock cycles, as in my current implementation, I iterate over `for i in [1..n]: for j in [1..i]` **twice**, but this implementation, I would need to iterate over `for i in [1..n]: for j in [1..n]` **once**, and implement additional functionality to ensure there are no duplicate edges selected.
+- Implement a 'sorted set' or 'sorted list' module and use it to store the 12 closest vertices to each node, and then use the 3D kissing number property to store those 12,000 edges. This uses slightly more memory than the approach I've implemented, but allows us to guarantee optimal / correct results. This approach would likely increase the number of clock cycles, as in my current implementation, I iterate over `for i in [1..n]: for j in [1..i]` **twice**, but this implementation, I would need to iterate over `for i in [1..n]: for j in [1..n]` **once**, and implement additional functionality to ensure there are no duplicate edges selected.
 
-* Implement heapsort to replace bitonic sort, which would likely reduce the number of clock cycles required for the sorting portion of the solution. 
-
+- Implement heapsort to replace bitonic sort, which would likely reduce the number of clock cycles required for the sorting portion of the solution.
 
 ### Key Synthesis Metrics:
 
