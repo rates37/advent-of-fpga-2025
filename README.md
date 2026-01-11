@@ -1162,6 +1162,6 @@ Hardcaml - to learn something new!
 # Todos / Task List:
 
 - [ ] Check todos in completed days to resolve issues, add documentation, etc.
-- [ ] add setup instructions for various platforms
 - [ ] Attempt days 3-X in Hardcaml
 - [ ] Continue benchmarking completed days
+- [ ] Integrate heap sorter with day 8 module and benchmark to see performance gains
