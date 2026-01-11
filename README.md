@@ -26,15 +26,11 @@ The table below summarises which problems have been successfully solved, the HDL
 
 \* Day 8's solution not guaranteed to produce correct results. However it is overwhelmingly likely to produce correct results on typical puzzle inputs. Refer to the day 8 section below for details.
 
-<!--
-Note: day 9 takes a LONG time to run (about 5 minutes on my Macbook Pro) the simulation since simulating the pipeline of 512 segment modules
- -->
+
 
 # How to run:
 
 ## Verilog:
-
-<!-- todo: add setup instructions? -->
 
 Running the Verilog testbenches requires [iverilog](https://steveicarus.github.io/iverilog/). Setup instructions have been included below:
 
@@ -62,7 +58,7 @@ iverilog -v
         <ol>
             <li>Download Icarus Verilog:</li>
             <ul>
-                <li>Visit the [Icarus Verilog download page](https://bleyer.org/icarus/)</li>
+                <li>Visit the <a href="https://bleyer.org/icarus/">Icarus Verilog download page</a></li>
                 <li>Download the latest Windows installer supported by your computer</li>
                 <li>Run the installer and follow the prompts. Make sure to select "Add to PATH" during installation.</li>
             </ul>
