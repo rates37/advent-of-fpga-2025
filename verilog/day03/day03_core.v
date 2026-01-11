@@ -190,7 +190,7 @@ module day03_core #(
 
                 S_CALC_P1: begin
                     if (remaining_len > 0) begin
-                        current_val_accum <= (current_val_accum * 10) + {60'd0, best_digit};// make sure widths align (also stops from being treated as negative)
+                        current_val_accum <= (current_val_accum << 3) + (current_val_accum << 1) + {60'd0, best_digit};// make sure widths align (also stops from being treated as negative)
                         current_scan_idx <= best_digit_pos + 1;
                         remaining_len <= remaining_len - 1;
                     end else begin

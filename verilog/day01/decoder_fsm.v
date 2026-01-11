@@ -56,7 +56,7 @@ module decoder_fsm # (
                     S_READING: begin
                         // if input character is a number:
                         if (char_in >= "0" && char_in <= "9") begin
-                            number_acc <= (number_acc * 10) + (char_in - "0");
+                            number_acc <= (number_acc << 3) + (number_acc << 1) + (char_in - "0");
 
                         end 
                         // if read in a newline character (this signals end of current reading)

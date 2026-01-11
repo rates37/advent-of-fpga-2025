@@ -124,7 +124,7 @@ module day02_core # (
                     if (is_digit) begin
                         if (parsed_lower_bin == 0 && digit_val == 0 && lower_digits == 0) begin
                         end else begin
-                            parsed_lower_bin <= parsed_lower_bin*10 + digit_val;
+                            parsed_lower_bin <= (parsed_lower_bin<<3) + (parsed_lower_bin<<1) + digit_val;
                             parsed_lower_bcd <= {parsed_lower_bcd[75:0], digit_val};
                             lower_digits <= lower_digits + 1;
                         end
@@ -142,7 +142,7 @@ module day02_core # (
 
                 S_PARSE_UPPER: begin
                     if (is_digit) begin
-                        parsed_upper_bin <= parsed_upper_bin*10 + digit_val;
+                        parsed_upper_bin <= (parsed_upper_bin<<3) + (parsed_upper_bin<<1) + digit_val;
                         parsed_upper_bcd <= {parsed_upper_bcd[75:0], digit_val};
                         upper_digits <= upper_digits + 1;
                         rom_addr <= rom_addr + 1;
