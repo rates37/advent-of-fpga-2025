@@ -546,7 +546,7 @@ def benchmark_day11(
         n,
         repeats,
         timeout,
-        day_dirname="day11_node_lookup",
+        day_dirname="day11",
         input_generator_function=gen_day11,
         input_desc="Number of cables",
         day_name="Day 11",
