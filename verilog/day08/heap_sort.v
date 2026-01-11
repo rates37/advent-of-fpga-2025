@@ -198,7 +198,7 @@ module heap_sorter #(
 
                     data_we_a <= 1;
                     data_w_addr_a <= 0;
-                    data_w_data_a <= data_r_addr_b;
+                    data_w_data_a <= data_r_data_b;
                     state <= S_EXTR_SWAP3;
                 end
 
