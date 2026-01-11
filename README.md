@@ -1,32 +1,39 @@
 # Advent of FPGA 2025
 
-This repo contains my attempts at solving Advent of Code 2025 problems in HDL. All works are my own
-unless otherwise stated.
+This repo contains my attempts at solving Advent of Code 2025 problems in HDL for the [Advent of FPGA competition](https://blog.janestreet.com/advent-of-fpga-challenge-2025/). Some ideas for solving puzzles my come from [my attempts at solving these problems in software](https://github.com/rates37/aoc-2025).
 
-Some ideas for solving puzzles my come from [my attempts at solving these problems in software](https://github.com/rates37/aoc-2025).
-
-# Summary of Results
+## Summary of Results
 
 The table below summarises which problems have been successfully solved, the HDL used (Verilog/Hardcaml), and the number of clock cycles used to solve my personal puzzle's input for each day. The 'size' of each puzzle's input has been noted for each day (using my personal puzzle input file). The discussions below often test with various size inputs, not just my personal puzzle inputs. As per [the advent of code rules](https://adventofcode.com/2025/about#faq_copying), sharing of actual inputs is not permitted, so feel free to provide your own input text files (these should be formatted in the exact same format as the Advent of Code site provides). However, in my own investigation and benchmarking of my designs, I wrote my own scripts to generate sample inputs of varying sizes. These functions can be found in [`generate_input.py`](/verilog/scripts/generate_input.py).
 
-| Day | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                           |
-| --- | ------------------------------ | ------------ | ---------------------------------------------------- |
-| 1   | Both                           | 19,691       | 4780 rotations                                       |
-| 2   | Both                           | 1,729        | 38 ranges                                            |
-| 3   | Verilog                        | 20,217       | 200 lines (100 chars per line)                       |
-| 4   | Verilog                        | 37,108       | 137 x 137 grid                                       |
-| 5   | Verilog                        | 66,649       | 177 ranges, 1000 query IDs                           |
-| 6   | Verilog                        | 35,139       | 4 numeric rows, 1000 operators, ~3709 chars per line |
-| 7   | Verilog                        | 121,496      | 142 x 142 grid                                       |
-| 8   | Verilog                        | 33,51,117\*  | 1000 x,y,z coordinates                               |
-| 9   | Verilog                        | 1,341,548    | 496 coordinates                                      |
-| 10  | Verilog                        | 58,319,971   | 177 machines (up to 13 x 10)                         |
-| 11  | Verilog                        | 66,542       | 583 device names                                     |
-| 12  | Not yet                        |              |                                                      |
+| Day               | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                           |
+| ----------------- | ------------------------------ | ------------ | ---------------------------------------------------- |
+| [Day 1](#day-1)   | Both                           | 19,691       | 4780 rotations                                       |
+| [Day 2](#day-2)   | Both                           | 1,729        | 38 ranges                                            |
+| [Day 3](#day-3)   | Verilog                        | 20,217       | 200 lines (100 chars per line)                       |
+| [Day 4](#day-4)   | Verilog                        | 37,108       | 137 x 137 grid                                       |
+| [Day 5](#day-5)   | Verilog                        | 66,649       | 177 ranges, 1000 query IDs                           |
+| [Day 6](#day-6)   | Verilog                        | 35,139       | 4 numeric rows, 1000 operators, ~3709 chars per line |
+| [Day 7](#day-7)   | Verilog                        | 121,496      | 142 x 142 grid                                       |
+| [Day 8](#day-8)   | Verilog                        | 33,51,117\*  | 1000 x,y,z coordinates                               |
+| [Day 9](#day-9)   | Verilog                        | 1,341,548    | 496 coordinates                                      |
+| [Day 10](#day-10) | Verilog                        | 58,319,971   | 177 machines (up to 13 x 10)                         |
+| [Day 11](#day-11) | Verilog                        | 66,542       | 583 device names                                     |
+| [Day 12](#day-12) | Not yet                        |              |                                                      |
 
 \* Day 8's solution not guaranteed to produce correct results. However it is overwhelmingly likely to produce correct results on typical puzzle inputs. Refer to the day 8 section below for details.
 
+## Notable days:
 
+This readme is quite long, as it contains full explanations of the solutions used, as well as key implementation details, and other points of discussion that I thought would be interesting to mention. I tried to do something interesting for each day, but some highlights of things I'm particularly proud of include:
+
+- [Day 2](#day-2): Derived an $\mathcal{O}(1)$ formula to count invalid numbers in each range
+
+- [Day 8](#day-8): Came up with a heuristic to avoid needing to store $\mathcal{O}(N^2)$ (~1 million) edges
+
+- [Day 9](#day-9): Pipelined approach to reduce $\mathcal{O}(N^3)$ solution into an $\mathcal{O}(n^2k)$ amortised solution
+
+- [Day 11](#day-11): CSR graph representation + DSU implementation in Verilog
 
 # How to run:
 
@@ -42,17 +49,11 @@ Running the Verilog testbenches requires [iverilog](https://steveicarus.github.i
     <h3>macOS</h3>
         <ol>
             <li>Install <a href="https://brew.sh/">Homebrew</a> if you haven't already:</li>
-            <pre><code>
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-            </code></pre>
+            <pre><code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</code></pre>
             <li>Install Icarus Verilog</li>
-            <pre><code>
-brew install icarus-verilog
-            </code></pre>
+            <pre><code>brew install icarus-verilog</code></pre>
             <li>Verify Installation:</li>
-            <pre><code>
-iverilog -v
-            </code></pre>
+            <pre><code>iverilog -v</code></pre>
         </ol>
     <h3>Windows</h3>
         <ol>
@@ -63,22 +64,16 @@ iverilog -v
                 <li>Run the installer and follow the prompts. Make sure to select "Add to PATH" during installation.</li>
             </ul>
             <li>Verify Installation: open cmd or powershell and run:<br /> 
-                <pre><code>
-iverilog -v
-            </code></pre>
+                <pre><code>iverilog -v</code></pre>
             </li>
         </ol>
     <h3>Ubuntu/Debian/WSL2</h3>
         <ol>
             <li>Install Icarus Verilog</li>
-            <pre><code>
-sudo apt update
-sudo apt install iverilog
-            </code></pre>
+            <pre><code>sudo apt update
+sudo apt install iverilog</code></pre>
             <li>Verify Installation:</li>
-            <pre><code>
-iverilog -v
-            </code></pre>
+            <pre><code>iverilog -v</code></pre>
         </ol>
 </details>
 <br/>
@@ -137,7 +132,7 @@ Took 41 clock cycles
 
 # Design Approaches / Discussion
 
-## Day 1 Overview:
+## Day 1:
 
 Day 1's puzzle was about the simulation of a rotary dial with the numbers from 0-99 being rotated left and right, and counting how many times the dial is on zero at the end of a rotation (part 1), as well as how many times the dial head passes zero at any point in the rotation (part 2).
 
@@ -890,7 +885,7 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 ## Day 9:
 
-Day 9's puzzle input consists of a list of 2D integer coordinates representing red tiles on a grid. The coordinates are ordered to form a closed loop where consecutive tiles are connected by straight horizontal or vertical segments. 
+Day 9's puzzle input consists of a list of 2D integer coordinates representing red tiles on a grid. The coordinates are ordered to form a closed loop where consecutive tiles are connected by straight horizontal or vertical segments.
 
 The goal of part 1 is to find the maximum area of a rectangle whose two opposite corners are red tiles. Part 2's goals is similar, except that the region of the rectangle must fit entirely within the closed grid.
 
@@ -898,21 +893,19 @@ The goal of part 1 is to find the maximum area of a rectangle whose two opposite
 
 At a high level, the algorithm solves both parts by exhaustively checking all possible pairs of vertices:
 
-* Part 1 is relatively straightforward, the largest seen area can simply be tracked as the vertices are iterated over
+- Part 1 is relatively straightforward, the largest seen area can simply be tracked as the vertices are iterated over
 
-* Part 2 is slightly more involved, as it requires geometric validation to ensure the rectangle is entirely within the polygon region formed by the vertices. For this, I use two geometry techniques:
+- Part 2 is slightly more involved, as it requires geometric validation to ensure the rectangle is entirely within the polygon region formed by the vertices. For this, I use two geometry techniques:
 
-    1. Cut detection: check if any polygon edge (a segment formed by two sequential coordinates) passes through the interior of the rectangle. If so, the rectangle is invalid because it contains the outside of the polygon.
+  1. Cut detection: check if any polygon edge (a segment formed by two sequential coordinates) passes through the interior of the rectangle. If so, the rectangle is invalid because it contains the outside of the polygon.
 
-    2. Ray casting: Determine if the rectangle's centre is inside the polygon using the ray casting algorithm; cast a horizontal ray from the center rightward and count how many vertical polygon edges it crosses. An odd count means that the center is inside, even means the center is outside
+  2. Ray casting: Determine if the rectangle's centre is inside the polygon using the ray casting algorithm; cast a horizontal ray from the center rightward and count how many vertical polygon edges it crosses. An odd count means that the center is inside, even means the center is outside
 
 A rectangle is valid for part 2 only if:
 
-* No segment cuts through it (all tiles are in the polygon)
+- No segment cuts through it (all tiles are in the polygon)
 
-* Its center is inside the polygon (the number of edge crossings of the ray is odd)
-
-
+- Its center is inside the polygon (the number of edge crossings of the ray is odd)
 
 ### Implementation in Hardware
 
@@ -932,7 +925,7 @@ In part 2, we only feed rectangles that are larger than the current best-seen pa
 
 #### Architecture Overview:
 
-The design uses a chunked pipeline approach, where polygon segments are distributed across multiple pipeline stages; each stage stores a subset of the segments locally, and performs these collision/containment checks in parallel. 
+The design uses a chunked pipeline approach, where polygon segments are distributed across multiple pipeline stages; each stage stores a subset of the segments locally, and performs these collision/containment checks in parallel.
 
 Initially, I considered having a pipeline stage for every segment, which would reduce the time complexity for part 2's solution from $\mathcal{O}(n^3)$ to an amortised $\mathcal{O}(N^2)$, however the puzzle input had 496 points, which would require 496 pipeline stages (completely infeasible). Rather than this, I made the decision to allow each stage to store multiple segments. Which this increases the number of clock cycles requires, it makes the actual design feasible, so it's a necessary trade-off.
 
@@ -948,18 +941,17 @@ Each pipeline stage implements a ready/valid handshake protocol for flow control
 
 Some optimisations were made in the [pipeline stage implementation](verilog/day09/pipeline_stage.v):
 
-* Short circuit evaluation: If a cut is detected, the pipeline stage implements short circuit detection to end processing early (so it becomes ready for the next candidate rectangle as early as possible), since this current rectangle has been invalidated, so there's no need to perform further calculation
+- Short circuit evaluation: If a cut is detected, the pipeline stage implements short circuit detection to end processing early (so it becomes ready for the next candidate rectangle as early as possible), since this current rectangle has been invalidated, so there's no need to perform further calculation
 
-* Early pruning: mentioned above, only candidate rectangles with area larger than the current best are fed into the pipeline
+- Early pruning: mentioned above, only candidate rectangles with area larger than the current best are fed into the pipeline
 
-* Prefetching: pipeline stages prefetch the next segment while processing the current segment if it is ready
+- Prefetching: pipeline stages prefetch the next segment while processing the current segment if it is ready
 
 ### Alternative approaches / Optimisations:
 
-* Serial implementation: Removing the pipeline and simply performing the $\mathcal{O}(N^3)$ approach would reduce the amount of logic usage, but drastically degrade performance
+- Serial implementation: Removing the pipeline and simply performing the $\mathcal{O}(N^3)$ approach would reduce the amount of logic usage, but drastically degrade performance
 
-* Increased parallelism: Using more stages would improve throughput, which would result in noticeable performance gains for larger inputs
-
+- Increased parallelism: Using more stages would improve throughput, which would result in noticeable performance gains for larger inputs
 
 ### Benchmarking and Evaluation
 
@@ -1170,6 +1162,6 @@ Hardcaml - to learn something new!
 # Todos / Task List:
 
 - [ ] Check todos in completed days to resolve issues, add documentation, etc.
-
+- [ ] add setup instructions for various platforms
 - [ ] Attempt days 3-X in Hardcaml
 - [ ] Continue benchmarking completed days
