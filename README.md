@@ -36,6 +36,57 @@ Note: day 9 takes a LONG time to run (about 5 minutes on my Macbook Pro) the sim
 
 <!-- todo: add setup instructions? -->
 
+Running the Verilog testbenches requires [iverilog](https://steveicarus.github.io/iverilog/). Setup instructions have been included below:
+
+<details>
+    <summary>
+        <strong>Click to expand/collapse installation instructions.
+        </strong>
+    </summary>
+    <h3>macOS</h3>
+        <ol>
+            <li>Install <a href="https://brew.sh/">Homebrew</a> if you haven't already:</li>
+            <pre><code>
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            </code></pre>
+            <li>Install Icarus Verilog</li>
+            <pre><code>
+brew install icarus-verilog
+            </code></pre>
+            <li>Verify Installation:</li>
+            <pre><code>
+iverilog -v
+            </code></pre>
+        </ol>
+    <h3>Windows</h3>
+        <ol>
+            <li>Download Icarus Verilog:</li>
+            <ul>
+                <li>Visit the [Icarus Verilog download page](https://bleyer.org/icarus/)</li>
+                <li>Download the latest Windows installer supported by your computer</li>
+                <li>Run the installer and follow the prompts. Make sure to select "Add to PATH" during installation.</li>
+            </ul>
+            <li>Verify Installation: open cmd or powershell and run:<br /> 
+                <pre><code>
+iverilog -v
+            </code></pre>
+            </li>
+        </ol>
+    <h3>Ubuntu/Debian/WSL2</h3>
+        <ol>
+            <li>Install Icarus Verilog</li>
+            <pre><code>
+sudo apt update
+sudo apt install iverilog
+            </code></pre>
+            <li>Verify Installation:</li>
+            <pre><code>
+iverilog -v
+            </code></pre>
+        </ol>
+</details>
+<br/>
+
 Uses [iverilog](https://steveicarus.github.io/iverilog/) as a simulator, for simplicity and ease of use. Each subdirectory in the [`verilog`](verilog/) has a Makefile to compile/run the testbench for that specific puzzle. `make run` will run the testbench with the puzzle input from `input.txt`. To change where the input file is read from, use the `INPUT_FILE` argument, a shown in the example below:
 
 ```sh
