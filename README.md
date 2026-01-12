@@ -4,9 +4,9 @@ This repo contains my attempts at solving Advent of Code 2025 problems in HDL fo
 
 ## Summary of Results
 
-The table below summarises which problems have been successfully solved, the HDL used (Verilog/Hardcaml), and the number of clock cycles used to solve my personal puzzle's input for each day. The 'size' of each puzzle's input has been noted for each day (using my personal puzzle input file). The discussions below often test with various size inputs, not just my personal puzzle inputs. As per [the advent of code rules](https://adventofcode.com/2025/about#faq_copying), sharing of actual inputs is not permitted, so feel free to provide your own input text files (these should be formatted in the exact same format as the Advent of Code site provides). However, in my own investigation and benchmarking of my designs, I wrote my own scripts to generate sample inputs of varying sizes. These functions can be found in [`generate_input.py`](/verilog/scripts/generate_input.py).
+The table below summarises which problems have been successfully solved, the HDL used (Verilog/Hardcaml), and the number of clock cycles used to solve my personal puzzle's input for each day. The 'size' of each puzzle's input has been noted for each day (using my personal puzzle input file). The discussions below often test with various size inputs, not just my personal puzzle inputs. As per [the Advent of Code Rules](https://adventofcode.com/2025/about#faq_copying), sharing of actual inputs is not permitted, so feel free to provide your own input text files (these should be formatted in the exact same format as the Advent of Code site provides). However, in my own investigation and benchmarking of my designs, I wrote my own scripts to generate sample inputs of varying sizes. These functions can be found in [`generate_input.py`](/verilog/scripts/generate_input.py).
 
-| Day               | Solved (Verilog/Harcaml/Both)? | Clock Cycles | Input size                                           |
+| Day               | Solved (Verilog/Hardcaml/Both) | Clock Cycles | Input Size                                           |
 | ----------------- | ------------------------------ | ------------ | ---------------------------------------------------- |
 | [Day 1](#day-1)   | Both                           | 19,691       | 4780 rotations                                       |
 | [Day 2](#day-2)   | Both                           | 1,729        | 38 ranges                                            |
@@ -21,11 +21,11 @@ The table below summarises which problems have been successfully solved, the HDL
 | [Day 11](#day-11) | Verilog                        | 66,542       | 583 device names                                     |
 | [Day 12](#day-12) | Not yet                        |              |                                                      |
 
-\* Day 8's solution not guaranteed to produce correct results. However it is overwhelmingly likely to produce correct results on typical puzzle inputs. Refer to the day 8 section below for details.
+\* Day 8's solution not guaranteed to produce correct results. However it is overwhelmingly likely to produce correct results on typical puzzle inputs. Refer to the [Day 8 section](#day-8) below for details.
 
 ## Notable days:
 
-This readme is quite long, as it contains full explanations of the solutions used, as well as key implementation details, and other points of discussion that I thought would be interesting to mention. I tried to do something interesting for each day, but some highlights of things I'm particularly proud of include:
+This readme is quite long, as it contains full explanations of the solutions used, key implementation details, and other points of discussion that I thought would be interesting to mention. I tried to do something interesting for each day, but some particular highlights I'm proud of include:
 
 - [Day 2](#day-2): Derived an $\mathcal{O}(1)$ formula to count invalid numbers in each range
 
@@ -76,9 +76,8 @@ sudo apt install iverilog</code></pre>
             <pre><code>iverilog -v</code></pre>
         </ol>
 </details>
-<br/>
 
-Uses [iverilog](https://steveicarus.github.io/iverilog/) as a simulator, for simplicity and ease of use. Each subdirectory in the [`verilog`](verilog/) has a Makefile to compile/run the testbench for that specific puzzle. `make run` will run the testbench with the puzzle input from `input.txt`. To change where the input file is read from, use the `INPUT_FILE` argument, a shown in the example below:
+Uses [iverilog](https://steveicarus.github.io/iverilog/) as a simulator, for simplicity and ease of use. Each subdirectory in the [`verilog`](verilog/) has a Makefile to compile/run the testbench for that specific puzzle. `make run` will run the testbench with the puzzle input from `input.txt`. To change where the input file is read from, use the `INPUT_FILE` argument, as shown in the example below:
 
 ```sh
 user@machine ~/advent-of-fpga-2025 $ cd ./verilog/day02
@@ -104,7 +103,7 @@ Took 561 clock cycles
 day02_tb.v:90: $finish called at 5705000 (1ps)
 ```
 
-Note: You can not use spaces in the file path argument (or you need to escape them).
+Note: You cannot use spaces in the file path argument (or you need to escape them).
 
 ## Hardcaml:
 
@@ -241,7 +240,7 @@ func sum_invalid_in_range(A, B):
 
 However, this approach is extremely inefficient, since the longer the bounds of the range are, the more valid numbers that will needlessly be inspected.
 
-So rather than iterative over _all_ numbers in the range from $A$ to $B$, we could instead just take the first half of the starting number (call it the "seed"), and check if repeating it twice is less than the upper limit of the range. We can then just increment the first half of the number and continue this process. This way, instead of iterating over all numbers in the range, we are simply iterating over invalid numbers until we exceed the limit of the range. This might look like the following:
+So rather than iterate over _all_ numbers in the range from $A$ to $B$, we could instead just take the first half of the starting number (call it the "seed"), and check if repeating it twice is less than the upper limit of the range. We can then just increment the first half of the number and continue this process. This way, instead of iterating over all numbers in the range, we are simply iterating over invalid numbers until we exceed the limit of the range. This might look like the following:
 
 ```
 func sum_invalid_in_range_v2(A, B):
@@ -344,7 +343,7 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 ### Approach Description:
 
-Day three's problem was about selecting batteries from battery banks to achieve a maximum joltage. This puzzle is essentially a task to find the largest increasing subsequences for each row of the input of length 2 (for part 1) and length 12 (for part 2).
+Day 3's problem was about selecting batteries from battery banks to achieve a maximum joltage. This puzzle is essentially a task to find the largest increasing subsequences for each row of the input of length 2 (for part 1) and length 12 (for part 2).
 
 A naive approach to solving this (and [the approach I took when initially solving this problem in C++](https://github.com/rates37/aoc-2025/blob/main/day03/day03.cpp)) is to take each row and iterate over it two/twelve times to find the largest increasing subsequence of length 2/12, greedily selecting the largest character found in a given range. Brief pseudocode for this approach is shown below:
 
@@ -769,7 +768,7 @@ So rather than storing all edges, we can employ a bucket-based filtering approac
 
 #### Heuristic Justification
 
-This approach can not guarantee correct results for **all** inputs. There exist cases such as where 999 points are clustered together and the 1000th point is far enough away such that the distance between that point and any other point is larger than any pairwise distances among the rest of the 999 nodes.
+This approach cannot guarantee correct results for **all** inputs. There exist cases such as where 999 points are clustered together and the 1000th point is far enough away such that the distance between that point and any other point is larger than any pairwise distances among the rest of the 999 nodes.
 
 However, if we assume all point coordinate values are approximately uniformly distributed between 0 and 100,000 (as appears in my real puzzle input), then the likelihood that an MST edge has a distance large enough so as to not appear in the set of edges generated by the approach above is vanishingly small.
 
@@ -800,7 +799,7 @@ The design consists of four main stages, orchestrated by the top-level module.
 The edge generation process uses a pipelined structure to minimise critical path length:
 
 <p align="center">
-<img src="docs/img/day_8_edge_pipeline.png" alt="High-level abstract diagram of Day 8 solution" height="720">
+<img src="docs/img/day_8_edge_pipeline.png" alt="High-level abstract diagram of Day 8 solution" width="100%">
 </p>
 
 This pipeline structure is used for both the histogram phases and the threshold/collection phases.
@@ -821,7 +820,7 @@ I chose Bitonic sort as the sorting algorithm of choice for a few reasons here:
 
 - It is 'in place', meaning $\mathcal{O}(1)$ additional memory is required
 
-- It's worst case time complexity is $ N \log ^2 (N)$. While not the lowest worst-case time complexity sorting algorithm, it is quite low, and beats out many other in-place algorithms like insertion-sort, bubble sort, etc.
+- It's worst case time complexity is $N \log ^2 (N)$. While not the lowest worst-case time complexity sorting algorithm, it is quite low, and beats out many other in-place algorithms like insertion-sort, bubble sort, etc.
 
 - It uses very simple hardware; simply a bitwise xor and a comparator, along with logic to read/write to/from memory
 
@@ -996,8 +995,11 @@ The core algorithm I used was a memoised depth-first search (DFS), which is virt
 We can define for any two nodes $u$ and $v$:
 
 $$
-\text{paths}(s,t) = \begin{cases} 1 & \text{if } s = t \\ \sum_{v \in \text{neighbours}(s)} \text{paths}(v, t) & \text{otherwise} \end{cases}
+\text{paths}(s,t) = \begin{cases} 1 & \text{if } s = t,
+ \\ \sum_{v \in \text{neighbours}(s)} \text{paths}(v, t) & \text{otherwise} \end{cases}
 $$
+
+(GitHub renders the equation above quite poorly 🥲)
 
 It is critical to memoise (store results of subproblems) for this problem, as without it, the recursion would revisit the same subproblems exponentially. With memoisation, each node is computed exactly once (provided it is even reachable from the start node), yielding an $\mathcal{O}(V + E)$ time complexity.
 
