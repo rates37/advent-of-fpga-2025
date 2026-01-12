@@ -15,7 +15,7 @@ The table below summarises which problems have been successfully solved, the HDL
 | [Day 5](#day-5)   | Verilog                        | 66,649       | 177 ranges, 1000 query IDs                           |
 | [Day 6](#day-6)   | Verilog                        | 35,139       | 4 numeric rows, 1000 operators, ~3709 chars per line |
 | [Day 7](#day-7)   | Verilog                        | 121,496      | 142 x 142 grid                                       |
-| [Day 8](#day-8)   | Verilog                        | 33,51,117\*  | 1000 x,y,z coordinates                               |
+| [Day 8](#day-8)   | Verilog                        | 1,744,510\*  | 1000 x,y,z coordinates                               |
 | [Day 9](#day-9)   | Verilog                        | 1,341,548    | 496 coordinates                                      |
 | [Day 10](#day-10) | Verilog                        | 58,319,971   | 177 machines (up to 13 x 10)                         |
 | [Day 11](#day-11) | Verilog                        | 66,542       | 583 device names                                     |
@@ -29,9 +29,9 @@ This readme is quite long, as it contains full explanations of the solutions use
 
 - [Day 2](#day-2): Derived an $\mathcal{O}(1)$ formula to count invalid numbers in each range
 
-- [Day 8](#day-8): Came up with a heuristic to avoid needing to store $\mathcal{O}(N^2)$ (~1 million) edges
+- [Day 8](#day-8): Came up with a heuristic to avoid needing to store $\mathcal{O}(N^2)$ (~1 million) edges for a dense connected graph
 
-- [Day 9](#day-9): Pipelined approach to reduce $\mathcal{O}(N^3)$ solution into an $\mathcal{O}(n^2k)$ amortised solution
+- [Day 9](#day-9): Pipelined approach to reduce $\mathcal{O}(N^3)$ solution into an $\mathcal{O}(N^2k)$ amortised solution
 
 - [Day 11](#day-11): CSR graph representation + DSU implementation in Verilog
 
@@ -826,7 +826,9 @@ I chose Bitonic sort as the sorting algorithm of choice for a few reasons here:
 
 - I've never implemented bitonic sort before and thought it would be interesting
 
-If I get time before submission I'd like to try and implement heapsort, since it is also in-place, and has a better worst-case time complexity.
+~~If I get time before submission I'd like to try and implement heapsort, since it is also in-place, and has a better worst-case time complexity.~~
+
+Update: A few days after writing this section of the readme, I implemented heapsort and discuss its performance gains below.
 
 #### DSU Implementation Details / Explanation
 
@@ -868,7 +870,7 @@ In benchmarking, the correctness of the solver's output was also checked, and no
 
 - Implement a 'sorted set' or 'sorted list' module and use it to store the 12 closest vertices to each node, and then use the 3D kissing number property to store those 12,000 edges. This uses slightly more memory than the approach I've implemented, but allows us to guarantee optimal / correct results. This approach would likely increase the number of clock cycles, as in my current implementation, I iterate over `for i in [1..n]: for j in [1..i]` **twice**, but this implementation, I would need to iterate over `for i in [1..n]: for j in [1..n]` **once**, and implement additional functionality to ensure there are no duplicate edges selected.
 
-- Implement heapsort to replace bitonic sort, which would likely reduce the number of clock cycles required for the sorting portion of the solution.
+- ~~Implement heapsort to replace bitonic sort, which would likely reduce the number of clock cycles required for the sorting portion of the solution.~~
 
 ### Key Synthesis Metrics:
 
@@ -881,6 +883,14 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 | Memory Bits                        | 603,136 / 1,677,312 (36%) |
 | Embedded Multiplier 9-bit elements | 14 / 288 (5%)             |
 | Restricted Fmax (Slow 1200mV 85C)  | 27.89 MHz                 |
+
+### Update (12th January)
+
+After implementing heapsort, a significant speedup was achieved, taking my personal puzzle input from 3,351,117 clock cycles down to 1,744,510 clock cycles. In reflection, bitonic sort was quite a poor choice given that the implementation was sequential (due to the reliance on embedded memory bits). Heap sort had the advantage of a better worst case time complexity, not needing to pad values to a power of 2, and the ability to terminate earlier, depending on input (e.g., during the heapify process, nodes might not need to sink / rise all the way through the array, compared to bitonic sort which will always take (approximately) the same number of clock cycles regardless of the ordering of the input).
+
+<p align="center">
+<img src="verilog/scripts/benchmarks/day08_benchmark_comparison.png" alt="Comparison of heap sort and btionic sort" width="720">
+</p>
 
 ## Day 9:
 
@@ -1163,7 +1173,5 @@ Hardcaml - to learn something new!
 
 # Todos / Task List:
 
-- [ ] Check todos in completed days to resolve issues, add documentation, etc.
+- [ ] Check todos in completed days to resolve issues, etc.
 - [ ] Attempt days 3-X in Hardcaml
-- [ ] Continue benchmarking completed days
-- [ ] Integrate heap sorter with day 8 module and benchmark to see performance gains

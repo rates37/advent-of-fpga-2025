@@ -3,7 +3,7 @@ VVP := vvp
 
 SRCS := day08_tb.v \
 		day08_core.v \
-		bitonic_sort.v \
+		heap_sort.v \
 		../utils/rom.v \
 		../utils/ram.v 
 

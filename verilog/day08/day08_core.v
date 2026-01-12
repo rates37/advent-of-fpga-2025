@@ -270,7 +270,7 @@ module day08_core #(
     // instantiate sorter:
     wire [EDGE_ADDR_BITS-1:0] sort_progress;
 
-    bitonic_sorter #(
+    heap_sorter #(
         .MAX_NUM_VALUES(MAX_EDGES),
         .DATA_ADDR_BITS(EDGE_ADDR_BITS),
         .DATA_WIDTH(EDGE_WIDTH)
