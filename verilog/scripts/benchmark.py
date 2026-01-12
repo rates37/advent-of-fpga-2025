@@ -507,6 +507,7 @@ def benchmark_day07(
         day_name="Day 7",
     )
 
+
 def benchmark_day08(
     lo: int = 700, hi: int = 1000, n: int = 3, repeats: int = 3, timeout: int = 60
 ) -> dict:
@@ -522,6 +523,7 @@ def benchmark_day08(
         day_name="Day 8",
     )
 
+
 def benchmark_day09(
     lo: int = 20, hi: int = 500, n: int = 10, repeats: int = 5, timeout: int = 60
 ) -> dict:
@@ -536,6 +538,7 @@ def benchmark_day09(
         input_desc="Number of vertices",
         day_name="Day 9",
     )
+
 
 def benchmark_day11(
     lo: int = 10, hi: int = 250, n: int = 10, repeats: int = 5, timeout: int = 20
@@ -558,17 +561,22 @@ def benchmark_all() -> None:
     benchmark_day02(lo=10, hi=100, n=5, repeats=5)
     benchmark_day03(lo=10, hi=1000, n=5, repeats=5)
     benchmark_day04(lo=10, hi=140, n=5, repeats=5, timeout=30)
-
+    benchmark_day05(
+        num_ranges_lo=10,
+        num_ranges_hi=200,
+        num_ranges_count=5,
+        num_queries_lo=100,
+        num_queries_hi=1000,
+        num_queries_count=5,
+        repeats=5,
+        timeout=5,
+    )
     benchmark_day06(lo=10, hi=1000, n=5, repeats=5, timeout=5)
+    benchmark_day07(lo=10, hi=250, n=5, repeats=5, timeout=5)
+    benchmark_day08(lo=700, hi=1000, n=3, repeats=3, timeout=60)
+    benchmark_day09(lo=20, hi=500, n=10, repeats=5, timeout=60)
+    benchmark_day11(lo=20, hi=750, n=5, repeats=5, timeout=20)
 
 
 if __name__ == "__main__":
-    # print(benchmark_day02(lo=10, hi=1000, n=4, repeats=5, timeout=30))
-    # benchmark_day03(lo=10, hi=1000, n=4, repeats=5, timeout=30)
-    # benchmark_day07(lo=10, hi=250, n=5, repeats=5, timeout=5)
-    # benchmark_day04(lo=10, hi=249, n=4, repeats=5, timeout=30)
-    # print(benchmark_day05())
-    # print(benchmark_day11(20, 750, n=5, repeats=5, timeout=20))
-    # print(benchmark_day09())
-    print(benchmark_day08())
-    # benchmark_all()
+    benchmark_all()
