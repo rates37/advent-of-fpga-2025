@@ -1,0 +1,13 @@
+(library
+ (name day12)
+ (modules day12_core decoder_fsm config region_checker)
+ (libraries hardcaml utils)
+ (preprocess
+  (pps ppx_hardcaml ppx_jane)))
+
+(executable
+ (name day12_tb)
+ (modules day12_tb)
+ (libraries day12 hardcaml hardcaml_waveterm base utils stdio)
+ (preprocess
+  (pps ppx_hardcaml ppx_jane)))
