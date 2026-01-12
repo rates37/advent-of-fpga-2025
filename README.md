@@ -217,7 +217,7 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 ## Day 2:
 
-Day 2's puzzle involved determining the number of 'invalid' numbers in a series of ranges of positive integers. Invalid numbers are defined as follows:
+Day 2's puzzle involved determining the sum of all of the 'invalid' numbers in a series of ranges of positive integers. Invalid numbers are defined as follows:
 
 - For part 1: An invalid number is a number with $D$ digits, that is formed by taking a number with $D/2$ digits and repeating it twice. For example, $123123$ is invalid because it can be formed by repeating $123$ twice.
 
@@ -235,7 +235,7 @@ func sum_invalid_in_range(A, B):
     for x in [A .. B]:
         if first_half(x) == second_half(x):
             total <- total + x
-    return x
+    return total
 ```
 
 However, this approach is extremely inefficient, since the longer the bounds of the range are, the more valid numbers that will needlessly be inspected.

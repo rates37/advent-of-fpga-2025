@@ -1,4 +1,4 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.2.9 Chrome/140.0.7339.249 Electron/38.7.2 Safari/537.36" version="29.2.9" pages="7">
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.3.0 Chrome/140.0.7339.249 Electron/38.7.2 Safari/537.36" version="29.3.0" pages="7">
   <diagram name="Page-1" id="59Smp9N8GCeQoAucmM49">
     <mxGraphModel dx="1198" dy="1189" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
       <root>
@@ -585,7 +585,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="ty4uJ6II5dxoviaSlibg" name="Day 8 Edge Generator Pipeline">
-    <mxGraphModel dx="695" dy="1212" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
+    <mxGraphModel dx="1498" dy="942" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -615,6 +615,33 @@
         </mxCell>
         <mxCell id="aQxEY_bu8nwqxGJYC2YC-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 5:} \\ \text{Sum deltas} \\ \text{dx}^2, \text{dy}^2, \text{dz}^2}$$" vertex="1">
           <mxGeometry height="90" width="170" x="-190" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="GYqek8oeUgEczIFO1kVQ-1" edge="1" parent="1" source="GYqek8oeUgEczIFO1kVQ-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="GYqek8oeUgEczIFO1kVQ-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GYqek8oeUgEczIFO1kVQ-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 1:} \\ \text{Issue RAM read addresses} \\ \text{for nodes } \texttt{i} \text{ and } \texttt{j}}$$" vertex="1">
+          <mxGeometry height="90" width="170" x="120" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="GYqek8oeUgEczIFO1kVQ-3" edge="1" parent="1" source="GYqek8oeUgEczIFO1kVQ-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="GYqek8oeUgEczIFO1kVQ-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GYqek8oeUgEczIFO1kVQ-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 2:} \\ \text{Wait 1 cycle for} \\ \text{RAM latency}}$$" vertex="1">
+          <mxGeometry height="90" width="170" x="350" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="GYqek8oeUgEczIFO1kVQ-5" edge="1" parent="1" source="GYqek8oeUgEczIFO1kVQ-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="GYqek8oeUgEczIFO1kVQ-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GYqek8oeUgEczIFO1kVQ-6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 3:} \\ \text{Compute deltas} \\ \text{dx, dy, dz}}$$" vertex="1">
+          <mxGeometry height="90" width="170" x="580" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="GYqek8oeUgEczIFO1kVQ-7" edge="1" parent="1" source="GYqek8oeUgEczIFO1kVQ-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="GYqek8oeUgEczIFO1kVQ-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GYqek8oeUgEczIFO1kVQ-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 4:} \\ \text{Square values} \\ \text{dx}^2, \text{dy}^2, \text{dz}^2}$$" vertex="1">
+          <mxGeometry height="90" width="170" x="810" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="GYqek8oeUgEczIFO1kVQ-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="$$\displaylines{\text{Stage 5:} \\ \text{Sum deltas} \\ \text{dx}^2, \text{dy}^2, \text{dz}^2}$$" vertex="1">
+          <mxGeometry height="90" width="170" x="1040" y="250" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
