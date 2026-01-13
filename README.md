@@ -986,7 +986,73 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 ## Day 10:
 
-Coming soon
+Day 10's puzzle input consists of a number of lines that each represent a system of lights and buttons:
+
+- each button affects a subset of lights, toggling the light state (for part 1), or adding 1 to their joltage when pressed (for part 2)
+- each light has a target joltage value that must be reached exactly
+
+For example: `[.#..] (0,2) (1,3) (0,1,2) {5,7,4,3}`
+
+- 4 lights (positions 0-3)
+- button 0 affects lights 0 and 2
+- button 1 affects lights 1 and 3
+- button 2 affects lights 0, 1, 2
+- targets (for part 1): light 1 is on, rest are off
+- targets (for part 2): light 0 needs 5, light 1 needs 7, ...
+
+### Algorithm / Approach:
+
+The puzzle can be mapped to a system of linear equations / minimisation problem over different algebraic domains:
+
+- For part 1, the domain is GF2 ($\{0, 1\}$)
+- For part 2, the domain is positive integers
+
+The system is described as:
+
+- Given: $\boldsymbol{A} \boldsymbol{x} = \boldsymbol{b}$
+- Find: $\boldsymbol{x}$ such that $\boldsymbol{x}_i \in \{ 0, 1 \}$ (part 1) or $\boldsymbol{x}_i \in \mathbb{Z}^+$ (part 2)
+- Minimise: $\sum_i \boldsymbol{x}_i$
+
+Where:
+
+- $\boldsymbol{A} \in \{0,1\} ^{(m \times n)}$ is a binary matrix representing the $m$ lights and $n$ buttons
+- $\boldsymbol{A}[i][j] = 1$ if button $j$ affects light $i$
+- $\boldsymbol{b} \in \mathbb{Z}^m$ is the vector of target joltages
+- $\boldsymbol{x} \in \mathbb{Z}^n$ is the solution vector (number of button presses)
+
+TO solve these parts, I implemented both GF2 solver and ILP solver modules, which use Gaussian elimination to reduce the system to row-reduced echelon form (RREF). For the ILP solver, systems are not always determined, and there may be many possible solutions, and we need to find the minimum among these solutions.
+
+To avoid needing to use fractions, when performing Gaussian elimination, instead of dividing by the pivot, we perform the multiplication:
+
+- Original: `row[i] = row[i] - (row[i][pivot_col] / pivot) x row[pivot]`
+
+- In my implementation: `row[i] = pivot x row[i] - row[i][pivot_col] x row[pivot]`
+
+This approach results in larger intermediate values, but avoids need for any fractional representations.
+
+After elimination to RREF there are two types of columns:
+
+- pivot columns: have a leading 1 or non-zero in some row, these variables are determined by others
+
+- free columns: no pivot, these variables can take on any value
+
+Part 2 requires the free variables to be enumerated over all valid combinations to find the minimum solution. This enumeration space is exponential in size, as each free variable $\boldsymbol{x}_j \in [0, \max (\boldsymbol{b}_i), \text{ where } A[i][j] = 1]$, so the total number of combinations is the product of the max bound on all free variables.
+
+Due to this, there are some lines in the input where the ILP solver takes an unreasonable amount of time to enumerate (since running inside the iverilog simulator), and as such, I put a maximum number on the number of free variable combinations to try. As a result, if the solution isn't within the first million, my solver (in its current state) won't produce a correct solution. Even with using a bound of 1 million, the testbench takes approximately 3-4 mins to run to completion with my personal puzzle input, and as such, I didn't benchmark my day 10 solution like I did for other days.
+
+There are more efficient ILP techniques (e.g., branch-and-bound heuristic) that would likely reduce the runt time, but will add significant hardware complexity, and so were not implemented here.
+
+### Key Synthesis Metrics:
+
+The design was compiled using Quartus Prime Lite 18.1 with the target device as a 10M50DAF484C7G (the FPGA on the DE10-lite dev board) and produced the following key usage metrics:
+
+| Metric                             | Usage                 |
+| ---------------------------------- | --------------------- |
+| Logic Elements                     | 24,622 / 49,760 (49%) |
+| Registers                          | 4034                  |
+| Memory Bits                        | 0 / 1,677,312 (36%)   |
+| Embedded Multiplier 9-bit elements | 64 / 288 (5%)         |
+| Restricted Fmax (Slow 1200mV 85C)  | 13.76 MHz MHz         |
 
 ## Day 11:
 
