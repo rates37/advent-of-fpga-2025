@@ -17,11 +17,11 @@ The table below summarises which problems have been successfully solved, the HDL
 | [Day 7](#day-7)   | Verilog                        | 121,496      | 142 x 142 grid                                       |
 | [Day 8](#day-8)   | Verilog                        | 1,744,510\*  | 1000 x,y,z coordinates                               |
 | [Day 9](#day-9)   | Verilog                        | 1,341,548    | 496 coordinates                                      |
-| [Day 10](#day-10) | Verilog                        | 58,319,971   | 177 machines (up to 13 x 10)                         |
+| [Day 10](#day-10) | Verilog                        | 58,319,971\* | 177 machines (up to 13 x 10)                         |
 | [Day 11](#day-11) | Verilog                        | 66,542       | 583 device names                                     |
 | [Day 12](#day-12) | Hardcaml                       | 25,098       | 6 shapes, 1000 region queries                        |
 
-\* Day 8's solution not guaranteed to produce correct results. However it is overwhelmingly likely to produce correct results on typical puzzle inputs. Refer to the [Day 8 section](#day-8) below for details.
+\* Day 8 and Day 10 solutions are not guaranteed to produce correct results. However they are quite likely to produce correct results on typical puzzle inputs. Refer to the [Day 8](#day-8) and [Day 10](#day-10) sections below for details.
 
 ## Notable days:
 
