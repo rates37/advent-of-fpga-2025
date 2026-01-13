@@ -1141,7 +1141,19 @@ The design was compiled using Quartus Prime Lite 18.1 with the target device as 
 
 ## Day 12:
 
-Currently unsolved
+Day 12's problem was a polyomino tiling puzzle. The problem input contained a sequence of shapes, followed by a list of region areas, along with the amount of each shape that needs to fit into that area. The aim was to return the number of regions that can fit the associated number of shapes in them. This is a known NP-hard problem, and can't be feasibly solved in a reasonable amount of time in software (and as far as I'm aware, this applies to hardware as well).
+
+However, the puzzle inputs to this problem had an additional property that was not strictly stated in the puzzle specification; the queries were separated into two categories:
+
+- Trivially Impossible: The total area of the shapes does not fit in the region. It's pretty easy to see why this is impossible to satisfy
+
+- Trivially Possible: The region was large enough to allow the tightest rectangular bounding box to be used for all shapes and would still accommodate all shapes.
+
+Knowing this property of the inputs made solving the problem relatively easy compared to some of the other days.
+
+Because of this ease, I decided to implement this day **only in Hardcaml**. For most of the other days I have used Hardcaml for so far, I typically created a HDL solution in Verilog first and then (roughly) translate it to Hardcaml. So I made this choice to prove to myself that I can write Hardcaml independently of Verilog.
+
+The solution itself is quite simple and straightforward (the parser/decoder was the most challenging part!). I used functors to parameterise the interfaces to the modules for day 12 (a technique I didn't use for the other days that I've solved with Hardcaml so far), which I found quite interesting. While I still feel quite new to Harcaml, I'm looking forward to trying it out again in the future.
 
 # Usage Notice
 
@@ -1155,7 +1167,7 @@ works (at least until the competition submission period has passed).
 
 ### Why Verilog?
 
-I like Verilog for its combination of simplicity and fairly easy to imagine exactly what hardware circuit it might synthesize to. Other HDLs introduce useful abstractions which I definitely appreciate, but I find the comparatively manual nature of 2001 Verilog charming.
+I like Verilog for its combination of simplicity and fairly easy to imagine exactly what hardware circuit it might synthesize to. Other HDLs introduce useful abstractions which I definitely appreciate, but I find the comparatively manual nature of the 2001 Verilog standard (mostly) charming (with the exception of not allowing unpacked arrays in module ports).
 
 I also taught Verilog through an introductory Digital Systems course at my university for four years in a row which has made me quite familiar with it.
 
@@ -1171,7 +1183,10 @@ Verilog - for fun
 
 Hardcaml - to learn something new!
 
+### How long did you spend working on this?
+
+I lost track, but a good chunk of my limited free time in the christmas / new year's period was dedicated to this.
+
 # Todos / Task List:
 
 - [ ] Check todos in completed days to resolve issues, etc.
-- [ ] Attempt days 3-X in Hardcaml
