@@ -1221,6 +1221,18 @@ Because of this ease, I decided to implement this day **only in Hardcaml**. For 
 
 The solution itself is quite simple and straightforward (the parser/decoder was the most challenging part!). I used functors to parameterise the interfaces to the modules for day 12 (a technique I didn't use for the other days that I've solved with Hardcaml so far), which I found quite interesting. While I still feel quite new to Harcaml, I'm looking forward to trying it out again in the future.
 
+### Key Synthesis Metrics:
+
+The generated Verilog HDL for this design was compiled using Quartus Prime Lite 18.1 with the target device as a 10M50DAF484C7G (the FPGA on the DE10-lite dev board) and produced the following key usage metrics:
+
+| Metric                             | Usage               |
+| ---------------------------------- | ------------------- |
+| Logic Elements                     | 3,957 / 49,760 (8%) |
+| Registers                          | 141                 |
+| Memory Bits                        | 0 / 1,677,312 (36%) |
+| Embedded Multiplier 9-bit elements | 8 / 288 (3%)        |
+| Restricted Fmax (Slow 1200mV 85C)  | 4.81 MHz MHz        |
+
 # Usage Notice
 
 This project is open source under the MIT License.
