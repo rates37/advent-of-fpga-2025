@@ -11,3 +11,11 @@
  (libraries day12 hardcaml hardcaml_waveterm base utils stdio)
  (preprocess
   (pps ppx_hardcaml ppx_jane)))
+
+(executable
+ (name generate_verilog)
+ (modules generate_verilog)
+ (libraries day12 hardcaml)
+ (preprocess
+  (pps ppx_hardcaml ppx_jane))
+)
