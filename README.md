@@ -1,6 +1,6 @@
 # Advent of FPGA 2025
 
-This repo contains my attempts at solving Advent of Code 2025 problems in HDL for the [Advent of FPGA competition](https://blog.janestreet.com/advent-of-fpga-challenge-2025/). Some ideas for solving puzzles my come from [my attempts at solving these problems in software](https://github.com/rates37/aoc-2025).
+This repo contains my attempts at solving Advent of Code 2025 problems in HDL for the [Advent of FPGA competition](https://blog.janestreet.com/advent-of-fpga-challenge-2025/). Some ideas for solving puzzles my come from [my software-based solutions](https://github.com/rates37/aoc-2025) to Advent of Code.
 
 ## Summary of Results
 
