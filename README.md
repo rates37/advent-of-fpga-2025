@@ -1020,7 +1020,7 @@ Where:
 - $\boldsymbol{b} \in \mathbb{Z}^m$ is the vector of target joltages
 - $\boldsymbol{x} \in \mathbb{Z}^n$ is the solution vector (number of button presses)
 
-TO solve these parts, I implemented both GF2 solver and ILP solver modules, which use Gaussian elimination to reduce the system to row-reduced echelon form (RREF). For the ILP solver, systems are not always determined, and there may be many possible solutions, and we need to find the minimum among these solutions.
+To solve these parts, I implemented both GF2 solver and ILP solver modules, which use Gaussian elimination to reduce the system to row-reduced echelon form (RREF). For the ILP solver, systems are not always determined, and there may be many possible solutions, and we need to find the minimum among these solutions.
 
 To avoid needing to use fractions, when performing Gaussian elimination, instead of dividing by the pivot, we perform the multiplication:
 
@@ -1040,7 +1040,7 @@ Part 2 requires the free variables to be enumerated over all valid combinations 
 
 Due to this, there are some lines in the input where the ILP solver takes an unreasonable amount of time to enumerate (since running inside the iverilog simulator), and as such, I put a maximum number on the number of free variable combinations to try. As a result, if the solution isn't within the first million, my solver (in its current state) won't produce a correct solution. Even with using a bound of 1 million, the testbench takes approximately 3-4 mins to run to completion with my personal puzzle input, and as such, I didn't benchmark my day 10 solution like I did for other days.
 
-There are more efficient ILP techniques (e.g., branch-and-bound heuristic) that would likely reduce the runt time, but will add significant hardware complexity, and so were not implemented here.
+There are more efficient ILP techniques (e.g., branch-and-bound heuristic) that would likely reduce the run time, but will add significant hardware complexity, and so were not implemented here.
 
 ### Key Synthesis Metrics:
 
