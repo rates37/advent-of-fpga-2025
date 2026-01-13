@@ -1259,7 +1259,7 @@ The generated Verilog HDL for this design was compiled using Quartus Prime Lite 
 This project is open source under the MIT License.
 While you are legally allowed to copy and reuse the code, I kindly ask that you
 do not take credit for my work, and if you are also competing in [Advent of FPGA](https://blog.janestreet.com/advent-of-fpga-challenge-2025/),
-then please uphold the integrity of the competition, by not taking ideas from these
+then please uphold the integrity of the competition, by not directly copying these
 works (at least until the competition submission period has passed).
 
 # FAQs:
@@ -1285,7 +1285,3 @@ Hardcaml - to learn something new!
 ### How long did you spend working on this?
 
 I lost track, but a good chunk of my limited free time in the christmas / new year's period was dedicated to this.
-
-# Todos / Task List:
-
-- [ ] Check todos in completed days to resolve issues, etc.
