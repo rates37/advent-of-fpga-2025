@@ -105,6 +105,27 @@ day02_tb.v:90: $finish called at 5705000 (1ps)
 
 Note: You cannot use spaces in the file path argument (or you need to escape them).
 
+## Generated Sample Input Files For Use with Simulators
+
+Since real puzzle inputs are not allowed to be shared, I have generated some sample inputs to be used with the testbenches.
+These are in each respective day's folder in `input1.txt`. You can run each day with these files as input using the command
+`make run INPUT_FILE="input1.txt"`, from the `verilog/dayX` directory.
+
+Expected results for generated files:
+
+| Day | Part 1 Answer       | Part 2 Answer       |
+| --- | ------------------- | ------------------- |
+| 1   | 46                  | 7172                |
+| 2   | 1141233933098280161 | 1152515507100999503 |
+| 3   | 19724               | 195251201539651     |
+| 4   | 3015                | 9924                |
+| 5   | 0                   | 48696436            |
+| 6   | 7213041670          | 59018317073         |
+| 7   | 697                 | 1358293712206       |
+| 8   | 139860              | 6233394726          |
+| 9   | 7800939846          | 7409593293          |
+| 11  | 14271               | 834                 |
+
 ## Hardcaml:
 
 Install requirements:
