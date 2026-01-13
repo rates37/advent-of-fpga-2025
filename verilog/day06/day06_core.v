@@ -1,6 +1,6 @@
 module day06_core #(
     parameter N_ADDR_BITS = 16,
-    parameter WIDTH_BITS = 12, // maximum number of colums defined as 2^WIDTH_BITS = 4096, my puzzle has 3709 cols
+    parameter WIDTH_BITS = 13, // maximum number of colums defined as 2^WIDTH_BITS = 8192, my puzzle has 3709 cols, but some test inputs are generated that exceed this
     parameter HEIGHT_BITS = 3 // max rows defined as 2^HEIGHT_BITS = 8, my puzzle has 5 rows
 
 ) (
